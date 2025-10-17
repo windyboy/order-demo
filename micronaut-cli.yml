@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: me.windy.demo
+testFramework: kotest
+sourceLanguage: kotlin
+buildTool: gradle_kotlin
+features: [annotation-api, app-name, data, data-jpa, flyway, gradle, h2, http-client, jackson-databind, jdbc-hikari, json-schema, json-schema-validation, kotest, kotlin, kotlin-application, ksp, logback, micronaut-aot, micronaut-build, micronaut-http-validation, netty-server, properties, rabbitmq, readme, shade, static-resources, testcontainers]

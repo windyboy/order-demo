@@ -1,0 +1,43 @@
+# Development Environment Configuration
+micronaut:
+  application:
+    name: order-service
+  server:
+    port: 8080
+  
+# Logging configuration for development
+logger:
+  levels:
+    me.windy.demo.order: DEBUG
+    io.micronaut: INFO
+    root: INFO
+
+# Data source configuration (H2 in-memory for dev)
+datasources:
+  default:
+    url: jdbc:h2:mem:devDb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ''
+    dialect: H2
+
+# JPA/Hibernate configuration
+jpa:
+  default:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: create-drop
+        show_sql: true
+        format_sql: true
+
+# Disable message broker in dev (use logging publisher)
+messaging:
+  broker:
+    enabled: false
+
+# Disable external inventory service (use dummy checker)
+inventory:
+  service:
+    enabled: false
+

@@ -1,0 +1,52 @@
+# Production Environment Configuration
+micronaut:
+  application:
+    name: order-service
+  server:
+    port: ${SERVER_PORT:8080}
+  
+# Logging configuration for production
+logger:
+  levels:
+    me.windy.demo.order: INFO
+    io.micronaut: WARN
+    root: WARN
+
+# Data source configuration (PostgreSQL for production)
+datasources:
+  default:
+    url: ${DATABASE_URL}
+    driverClassName: org.postgresql.Driver
+    username: ${DATABASE_USER}
+    password: ${DATABASE_PASSWORD}
+    dialect: POSTGRES
+    maximum-pool-size: 20
+    minimum-idle: 5
+
+# JPA/Hibernate configuration
+jpa:
+  default:
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: validate
+        show_sql: false
+
+# Message broker configuration (RabbitMQ/Kafka for production)
+messaging:
+  broker:
+    enabled: true
+    url: ${MESSAGE_BROKER_URL}
+    username: ${MESSAGE_BROKER_USER}
+    password: ${MESSAGE_BROKER_PASSWORD}
+
+# External inventory service configuration
+inventory:
+  service:
+    enabled: true
+    url: ${INVENTORY_SERVICE_URL}
+    timeout: 5s
+    retry:
+      max-attempts: 3
+      delay: 1s
+
