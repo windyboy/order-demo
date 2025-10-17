@@ -1,9 +1,9 @@
-package me.windy.demo.order.adapter.`in`.http.mapper
+package me.windy.demo.order.adapter.incoming.http.mapper
 
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.collections.shouldHaveSize
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderRequest
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderRequest
 import me.windy.demo.order.core.domain.Money
 import me.windy.demo.order.core.domain.OrderId
 import java.math.BigDecimal

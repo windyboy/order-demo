@@ -1,4 +1,4 @@
-package me.windy.demo.order.core.port.`in`
+package me.windy.demo.order.core.port.incoming
 
 import me.windy.demo.order.core.domain.OrderError
 import me.windy.demo.order.core.domain.OrderId

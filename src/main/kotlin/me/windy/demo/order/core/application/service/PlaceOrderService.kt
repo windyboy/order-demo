@@ -5,9 +5,9 @@ import me.windy.demo.order.core.domain.Order
 import me.windy.demo.order.core.domain.OrderError
 import me.windy.demo.order.core.domain.OrderId
 import me.windy.demo.order.core.domain.OrderItem
-import me.windy.demo.order.core.port.out.DomainEventPublisher
-import me.windy.demo.order.core.port.out.OrderRepository
-import me.windy.demo.order.core.port.out.StockAvailabilityChecker
+import me.windy.demo.order.core.port.outgoing.DomainEventPublisher
+import me.windy.demo.order.core.port.outgoing.OrderRepository
+import me.windy.demo.order.core.port.outgoing.StockAvailabilityChecker
 
 /**
  * Application service for order placement business logic.

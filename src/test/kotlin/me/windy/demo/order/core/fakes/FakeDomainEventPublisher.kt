@@ -1,7 +1,7 @@
 package me.windy.demo.order.core.fakes
 
 import me.windy.demo.order.core.domain.event.DomainEvent
-import me.windy.demo.order.core.port.out.DomainEventPublisher
+import me.windy.demo.order.core.port.outgoing.DomainEventPublisher
 
 /**
  * Fake implementation for testing.

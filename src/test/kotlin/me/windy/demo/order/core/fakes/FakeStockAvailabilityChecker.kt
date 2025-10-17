@@ -1,6 +1,6 @@
 package me.windy.demo.order.core.fakes
 
-import me.windy.demo.order.core.port.out.StockAvailabilityChecker
+import me.windy.demo.order.core.port.outgoing.StockAvailabilityChecker
 
 /**
  * Fake implementation for testing.

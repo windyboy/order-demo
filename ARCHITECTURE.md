@@ -172,7 +172,7 @@ src/test/kotlin/
 │       ├── FakeStockChecker.kt              ✅ 测试替身
 │       └── FakeDomainEventPublisher.kt      ✅ 测试替身
 ├── adapter/
-│   └── in/http/mapper/
+│   └── incoming/http/mapper/
 │       └── OrderMapperTest.kt               ✅ 映射器测试
 └── e2e/
     └── OrderE2ETest.kt                      ✅ 端到端测试
@@ -226,7 +226,7 @@ datasources.default.url=jdbc:postgresql://localhost:5432/orders
 
 ### 添加新用例
 ```kotlin
-// 1. 定义端口 (core/port/in/)
+// 1. 定义端口 (core/port/incoming/)
 interface CancelOrderUseCase {
     fun execute(command: CancelOrderCommand): Result<Unit>
 }

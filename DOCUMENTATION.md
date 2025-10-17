@@ -123,9 +123,9 @@ ARCHITECTURE.md
 | 文档章节 | 对应代码位置 | 说明 |
 |---------|-------------|------|
 | **Domain 层设计** | `core/domain/` | 聚合根、值对象、领域事件 |
-| **Port 层接口** | `core/port/in/`, `core/port/out/` | 入站/出站端口定义 |
+| **Port 层接口** | `core/port/incoming/`, `core/port/outgoing/` | 入站/出站端口定义 |
 | **Application 层** | `core/application/` | Handler 和 Service |
-| **Adapter 层** | `adapter/in/`, `adapter/out/` | HTTP、持久化、消息适配器 |
+| **Adapter 层** | `adapter/incoming/`, `adapter/outgoing/` | HTTP、持久化、消息适配器 |
 | **测试策略** | `src/test/kotlin/` | 单元、集成、E2E 测试 |
 | **错误处理** | `core/domain/OrderError.kt` | Sealed 错误类型 |
 | **配置管理** | `src/main/resources/application-*.yml` | 环境配置 |

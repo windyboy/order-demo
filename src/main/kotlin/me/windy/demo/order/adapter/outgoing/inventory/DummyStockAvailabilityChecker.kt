@@ -1,8 +1,8 @@
-package me.windy.demo.order.adapter.out.inventory
+package me.windy.demo.order.adapter.outgoing.inventory
 
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
-import me.windy.demo.order.core.port.out.StockAvailabilityChecker
+import me.windy.demo.order.core.port.outgoing.StockAvailabilityChecker
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 

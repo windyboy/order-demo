@@ -1,12 +1,12 @@
-package me.windy.demo.order.adapter.`in`.http.mapper
+package me.windy.demo.order.adapter.incoming.http.mapper
 
 import jakarta.inject.Singleton
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderRequest
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderResponse
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderRequest
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderResponse
 import me.windy.demo.order.core.domain.Money
 import me.windy.demo.order.core.domain.OrderId
 import me.windy.demo.order.core.domain.OrderItem
-import me.windy.demo.order.core.port.`in`.PlaceOrderCommand
+import me.windy.demo.order.core.port.incoming.PlaceOrderCommand
 
 /**
  * Mapper between HTTP DTOs and Domain objects.

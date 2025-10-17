@@ -1,4 +1,4 @@
-package me.windy.demo.order.adapter.`in`.http
+package me.windy.demo.order.adapter.incoming.http
 
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
@@ -7,12 +7,12 @@ import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Post
 import jakarta.validation.Valid
-import me.windy.demo.order.adapter.`in`.http.dto.ApiResponse
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderRequest
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderResponse
-import me.windy.demo.order.adapter.`in`.http.mapper.OrderMapper
+import me.windy.demo.order.adapter.incoming.http.dto.ApiResponse
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderRequest
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderResponse
+import me.windy.demo.order.adapter.incoming.http.mapper.OrderMapper
 import me.windy.demo.order.core.domain.OrderError
-import me.windy.demo.order.core.port.`in`.PlaceOrderUseCase
+import me.windy.demo.order.core.port.incoming.PlaceOrderUseCase
 import org.slf4j.LoggerFactory
 
 /**

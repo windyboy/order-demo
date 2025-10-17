@@ -1,4 +1,4 @@
-package me.windy.demo.order.core.port.out
+package me.windy.demo.order.core.port.outgoing
 
 /**
  * Port for checking product stock availability.

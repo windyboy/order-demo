@@ -4,8 +4,8 @@ import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 import me.windy.demo.order.core.application.service.PlaceOrderService
 import me.windy.demo.order.core.domain.OrderId
-import me.windy.demo.order.core.port.`in`.PlaceOrderCommand
-import me.windy.demo.order.core.port.`in`.PlaceOrderUseCase
+import me.windy.demo.order.core.port.incoming.PlaceOrderCommand
+import me.windy.demo.order.core.port.incoming.PlaceOrderUseCase
 
 /**
  * Handler for the Place Order use case.

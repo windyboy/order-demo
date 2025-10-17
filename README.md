@@ -58,21 +58,21 @@ order/
 │   │   └── config/
 │   │       └── ApplicationConfig.kt     # 应用配置
 │   └── port/                       # 端口接口
-│       ├── in/                     # 入站端口（用例接口）
+│       ├── incoming/               # 入站端口（用例接口）
 │       │   ├── PlaceOrderUseCase.kt
 │       │   └── PlaceOrderCommand.kt
-│       └── out/                    # 出站端口（外部依赖）
+│       └── outgoing/               # 出站端口（外部依赖）
 │           ├── OrderRepository.kt
 │           ├── StockAvailabilityChecker.kt
 │           └── DomainEventPublisher.kt
 ├── adapter/                        # 适配器层
-│   ├── in/http/                    # HTTP 入站适配器
+│   ├── incoming/http/              # HTTP 入站适配器
 │   │   ├── OrderController.kt
 │   │   ├── dto/
 │   │   │   └── PlaceOrderDtos.kt
 │   │   └── mapper/
 │   │       └── OrderMapper.kt     # HTTP 映射器
-│   ├── out/
+│   ├── outgoing/
 │   │   ├── persistence/            # 持久化适配器
 │   │   │   └── repo/
 │   │   │       └── InMemoryOrderRepository.kt
@@ -312,7 +312,7 @@ curl http://localhost:8080/orders/health
 
 ### 添加新用例（例如：取消订单）
 
-1. **定义端口**（`core/port/in/`）
+1. **定义端口**（`core/port/incoming/`）
    ```kotlin
    interface CancelOrderUseCase {
        fun execute(command: CancelOrderCommand): Result<Unit>
@@ -325,7 +325,7 @@ curl http://localhost:8080/orders/health
    class CancelOrderHandler(...) : CancelOrderUseCase
    ```
 
-3. **添加适配器**（`adapter/in/http/`）
+3. **添加适配器**（`adapter/incoming/http/`）
    ```kotlin
    @Delete("/{orderId}")
    fun cancel(@PathVariable orderId: String): HttpResponse<*>

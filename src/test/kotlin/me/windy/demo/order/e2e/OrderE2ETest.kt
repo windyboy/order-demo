@@ -9,9 +9,9 @@ import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
 import io.micronaut.test.extensions.kotest5.annotation.MicronautTest
-import me.windy.demo.order.adapter.`in`.http.dto.ApiResponse
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderRequest
-import me.windy.demo.order.adapter.`in`.http.dto.PlaceOrderResponse
+import me.windy.demo.order.adapter.incoming.http.dto.ApiResponse
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderRequest
+import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderResponse
 import java.math.BigDecimal
 
 /**

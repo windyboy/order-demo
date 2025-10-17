@@ -2,7 +2,7 @@ package me.windy.demo.order.core.fakes
 
 import me.windy.demo.order.core.domain.Order
 import me.windy.demo.order.core.domain.OrderId
-import me.windy.demo.order.core.port.out.OrderRepository
+import me.windy.demo.order.core.port.outgoing.OrderRepository
 
 /**
  * Fake implementation for testing.

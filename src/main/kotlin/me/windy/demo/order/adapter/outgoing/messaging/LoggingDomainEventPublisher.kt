@@ -1,11 +1,11 @@
-package me.windy.demo.order.adapter.out.messaging
+package me.windy.demo.order.adapter.outgoing.messaging
 
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 import me.windy.demo.order.core.domain.event.DomainEvent
 import me.windy.demo.order.core.domain.event.OrderPlacedEvent
 import me.windy.demo.order.core.domain.event.OrderStatusChangedEvent
-import me.windy.demo.order.core.port.out.DomainEventPublisher
+import me.windy.demo.order.core.port.outgoing.DomainEventPublisher
 import org.slf4j.LoggerFactory
 
 /**

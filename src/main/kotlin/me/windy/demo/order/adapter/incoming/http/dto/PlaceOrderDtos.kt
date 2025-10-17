@@ -1,4 +1,4 @@
-package me.windy.demo.order.adapter.`in`.http.dto
+package me.windy.demo.order.adapter.incoming.http.dto
 
 import io.micronaut.serde.annotation.Serdeable
 import jakarta.validation.Valid

@@ -1,10 +1,10 @@
-package me.windy.demo.order.adapter.out.persistence.repo
+package me.windy.demo.order.adapter.outgoing.persistence.repo
 
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 import me.windy.demo.order.core.domain.Order
 import me.windy.demo.order.core.domain.OrderId
-import me.windy.demo.order.core.port.out.OrderRepository
+import me.windy.demo.order.core.port.outgoing.OrderRepository
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 

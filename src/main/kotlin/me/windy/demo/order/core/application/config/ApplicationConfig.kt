@@ -3,9 +3,9 @@ package me.windy.demo.order.core.application.config
 import io.micronaut.context.annotation.Factory
 import jakarta.inject.Singleton
 import me.windy.demo.order.core.application.service.PlaceOrderService
-import me.windy.demo.order.core.port.out.DomainEventPublisher
-import me.windy.demo.order.core.port.out.OrderRepository
-import me.windy.demo.order.core.port.out.StockAvailabilityChecker
+import me.windy.demo.order.core.port.outgoing.DomainEventPublisher
+import me.windy.demo.order.core.port.outgoing.OrderRepository
+import me.windy.demo.order.core.port.outgoing.StockAvailabilityChecker
 
 /**
  * Application configuration factory.
