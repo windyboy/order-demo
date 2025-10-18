@@ -1,32 +1,32 @@
 # Error Mapping Guide
 
-本文档说明了订单服务中错误类型与HTTP响应状态码的映射关系。
+This document describes the mapping between error types and HTTP response status codes in the order service.
 
-## 错误类型层次结构
+## Error Type Hierarchy
 
 ```
 OrderError (sealed class)
-├── InvalidOrder           - 订单数据无效
-├── InvalidState           - 非法状态转换
-├── DomainViolation        - 领域规则违反
-├── InsufficientStock      - 库存不足
-└── OrderPlacementFailed   - 订单创建失败（系统错误）
+├── InvalidOrder           - Invalid order data
+├── InvalidState           - Illegal state transition
+├── DomainViolation        - Domain rule violation
+├── InsufficientStock      - Insufficient stock
+└── OrderPlacementFailed   - Order placement failed (system error)
 ```
 
-## HTTP 状态码映射
+## HTTP Status Code Mapping
 
-| 错误类型 | 错误码 | HTTP 状态 | 场景 |
+| Error Type | Error Code | HTTP Status | Scenario |
 |---------|--------|-----------|------|
-| `InvalidOrder` | `INVALID_ORDER` | **400 Bad Request** | 订单数据验证失败（空列表、负价格等） |
-| `InvalidState` | `INVALID_STATE` | **400 Bad Request** | 状态转换不合法（如CANCELLED→CONFIRMED） |
-| `DomainViolation` | `DOMAIN_VIOLATION` | **400 Bad Request** | 违反领域不变式（如订单必须至少有一个商品） |
-| `InsufficientStock` | `INSUFFICIENT_STOCK` | **409 Conflict** | 一个或多个商品库存不足 |
-| `OrderPlacementFailed` | `ORDER_PLACEMENT_FAILED` | **500 Internal Server Error** | 系统故障（数据库、消息队列等） |
-| DTO Validation Error | `VALIDATION_ERROR` | **400 Bad Request** | Bean Validation失败（由框架自动处理） |
+| `InvalidOrder` | `INVALID_ORDER` | **400 Bad Request** | Order data validation failed (empty list, negative price, etc.) |
+| `InvalidState` | `INVALID_STATE` | **400 Bad Request** | Illegal state transition (e.g., CANCELLED→CONFIRMED) |
+| `DomainViolation` | `DOMAIN_VIOLATION` | **400 Bad Request** | Domain invariant violation (e.g., order must have at least one item) |
+| `InsufficientStock` | `INSUFFICIENT_STOCK` | **409 Conflict** | One or more items out of stock |
+| `OrderPlacementFailed` | `ORDER_PLACEMENT_FAILED` | **500 Internal Server Error** | System failure (database, message queue, etc.) |
+| DTO Validation Error | `VALIDATION_ERROR` | **400 Bad Request** | Bean Validation failure (handled automatically by framework) |
 
-## 错误响应格式
+## Error Response Format
 
-所有错误响应使用统一的 `ApiResponse<T>` 包装器：
+All error responses use a unified `ApiResponse<T>` wrapper:
 
 ```json
 {
@@ -41,14 +41,14 @@ OrderError (sealed class)
 }
 ```
 
-## 详细场景说明
+## Detailed Scenario Descriptions
 
 ### 1. InvalidOrder (400)
 
-**触发条件**：
-- 订单商品列表为空
-- 商品数量为负数或零（虽然会被DTO验证拦截）
-- 其他业务规则验证失败
+**Trigger Conditions**:
+- Order item list is empty
+- Item quantity is negative or zero (though intercepted by DTO validation)
+- Other business rule validation failures
 
 **示例请求**：
 ```json
@@ -58,7 +58,7 @@ OrderError (sealed class)
 }
 ```
 
-**示例响应**：
+**Example Response**:
 ```json
 {
   "success": false,
@@ -71,17 +71,17 @@ OrderError (sealed class)
 
 ### 2. InvalidState (400)
 
-**触发条件**：
-- 尝试从终态（CANCELLED, DELIVERED）转换到其他状态
-- 跳过必要的中间状态（如NEW直接到SHIPPED）
+**Trigger Conditions**:
+- Attempting to transition from terminal state (CANCELLED, DELIVERED) to another state
+- Skipping necessary intermediate states (e.g., NEW directly to SHIPPED)
 
-**示例**：
+**Example**:
 ```kotlin
 val order = Order.create(items).cancel().getOrThrow()
-order.confirm() // 失败：CANCELLED是终态
+order.confirm() // Failure: CANCELLED is a terminal state
 ```
 
-**示例响应**：
+**Example Response**:
 ```json
 {
   "success": false,
@@ -98,12 +98,12 @@ order.confirm() // 失败：CANCELLED是终态
 
 ### 3. DomainViolation (400)
 
-**触发条件**：
-- Money金额为负数（在Money初始化时检查）
-- 订单总金额计算异常
-- 其他领域不变式违反
+**Trigger Conditions**:
+- Money amount is negative (checked during Money initialization)
+- Order total calculation exception
+- Other domain invariant violations
 
-**示例响应**：
+**Example Response**:
 ```json
 {
   "success": false,
@@ -116,11 +116,11 @@ order.confirm() // 失败：CANCELLED是终态
 
 ### 4. InsufficientStock (409)
 
-**触发条件**：
-- 一个或多个SKU库存不足
-- 库存服务不可用返回错误
+**Trigger Conditions**:
+- One or more SKUs out of stock
+- Inventory service unavailable returning error
 
-**示例请求**：
+**Example Request**:
 ```json
 {
   "items": [
@@ -130,7 +130,7 @@ order.confirm() // 失败：CANCELLED是终态
 }
 ```
 
-**示例响应**：
+**Example Response**:
 ```json
 {
   "success": false,
@@ -144,12 +144,12 @@ order.confirm() // 失败：CANCELLED是终态
 
 ### 5. OrderPlacementFailed (500)
 
-**触发条件**：
-- 数据库保存失败
-- 事件发布失败
-- 其他系统级错误
+**Trigger Conditions**:
+- Database save failure
+- Event publishing failure
+- Other system-level errors
 
-**示例响应**：
+**Example Response**:
 ```json
 {
   "success": false,
@@ -162,13 +162,13 @@ order.confirm() // 失败：CANCELLED是终态
 
 ### 6. DTO Validation Errors (400)
 
-**触发条件** (由 Bean Validation 自动处理)：
-- SKU为空或空白
-- 单价为负数
-- 数量≤0
-- requestId为空（如果标记为必填）
+**Trigger Conditions** (Automatically handled by Bean Validation):
+- SKU is empty or blank
+- Unit price is negative
+- Quantity ≤ 0
+- requestId is empty (if marked as required)
 
-**示例请求**：
+**Example Request**:
 ```json
 {
   "items": [
@@ -177,7 +177,7 @@ order.confirm() // 失败：CANCELLED是终态
 }
 ```
 
-**Micronaut自动返回的错误响应**：
+**Error Response Automatically Returned by Micronaut**:
 ```json
 {
   "_embedded": {
@@ -197,11 +197,11 @@ order.confirm() // 失败：CANCELLED是终态
 }
 ```
 
-## Result类型与异常的协作
+## Result Type and Exception Collaboration
 
 ### Result-Based Error Handling
 
-所有业务逻辑使用 `Result<T>` 类型：
+All business logic uses the `Result<T>` type:
 
 ```kotlin
 fun placeOrder(items: List<OrderItem>): Result<OrderId> {
@@ -209,14 +209,14 @@ fun placeOrder(items: List<OrderItem>): Result<OrderId> {
         return Result.failure(OrderError.InvalidOrder("..."))
     }
     
-    // 业务逻辑
+    // Business logic
     return Result.success(orderId)
 }
 ```
 
-### Controller层错误映射
+### Controller Layer Error Mapping
 
-Controller通过 `toErrorResponse()` 统一处理：
+Controller handles errors uniformly through `toErrorResponse()`:
 
 ```kotlin
 result.fold(
@@ -225,38 +225,38 @@ result.fold(
 )
 ```
 
-## 日志记录规范
+## Logging Standards
 
-每个错误类型都会记录相应级别的日志：
+Each error type logs at the appropriate level:
 
-| 错误类型 | 日志级别 | 包含信息 |
+| Error Type | Log Level | Included Information |
 |---------|---------|---------|
-| `InvalidOrder` | **WARN** | requestId, 错误详情 |
+| `InvalidOrder` | **WARN** | requestId, error details |
 | `InvalidState` | **WARN** | requestId, currentState, targetState |
-| `DomainViolation` | **WARN** | requestId, 违反的规则 |
-| `InsufficientStock` | **WARN** | requestId, 不可用SKU列表 |
-| `OrderPlacementFailed` | **ERROR** | requestId, 异常堆栈 |
+| `DomainViolation` | **WARN** | requestId, violated rules |
+| `InsufficientStock` | **WARN** | requestId, unavailable SKU list |
+| `OrderPlacementFailed` | **ERROR** | requestId, exception stack trace |
 
-**日志示例**：
+**Log Examples**:
 ```
 2025-10-17 10:30:15 [WARN ] OrderController - Failed to place order - insufficient stock: requestId=req-002, items=[SKU-003]
 2025-10-17 10:31:20 [ERROR] OrderController - Failed to place order - system error: requestId=req-003, error=Failed to publish domain events: Connection refused
 ```
 
-## 客户端处理建议
+## Client Handling Recommendations
 
-### 可重试错误
+### Retriable Errors
 
-以下错误可以重试：
-- **500 Internal Server Error** (`ORDER_PLACEMENT_FAILED`) - 临时系统故障
-- **409 Conflict** (`INSUFFICIENT_STOCK`) - 可能库存恢复后重试
+The following errors can be retried:
+- **500 Internal Server Error** (`ORDER_PLACEMENT_FAILED`) - Temporary system failure
+- **409 Conflict** (`INSUFFICIENT_STOCK`) - May retry after inventory recovery
 
-### 不可重试错误
+### Non-Retriable Errors
 
-以下错误应该修正请求后再尝试：
-- **400 Bad Request** - 所有验证错误和领域规则违反
+The following errors should be corrected before retrying:
+- **400 Bad Request** - All validation errors and domain rule violations
 
-### 示例客户端代码
+### Example Client Code
 
 ```typescript
 async function placeOrder(request: PlaceOrderRequest): Promise<OrderId> {
@@ -271,19 +271,19 @@ async function placeOrder(request: PlaceOrderRequest): Promise<OrderId> {
       
       switch (error.error.code) {
         case 'INSUFFICIENT_STOCK':
-          // 显示缺货提示
+          // Show out-of-stock notification
           showAlert('部分商品库存不足', error.error.details);
           break;
         case 'INVALID_ORDER':
         case 'INVALID_STATE':
         case 'DOMAIN_VIOLATION':
-          // 显示验证错误
+          // Show validation error
           showAlert('请求参数错误', error.error.message);
           break;
         case 'ORDER_PLACEMENT_FAILED':
-          // 系统错误，可重试
+          // System error, retriable
           if (confirm('系统繁忙，是否重试？')) {
-            return placeOrder(request); // 重试
+            return placeOrder(request); // Retry
           }
           break;
       }
@@ -291,29 +291,29 @@ async function placeOrder(request: PlaceOrderRequest): Promise<OrderId> {
     
     return response.json();
   } catch (e) {
-    // 网络错误处理
+    // Network error handling
   }
 }
 ```
 
-## 扩展性
+## Extensibility
 
-添加新的错误类型：
+Adding New Error Types:
 
-1. 在 `OrderError.kt` 中添加新的sealed子类
-2. 在 `OrderController.toErrorResponse()` 中添加映射
-3. 更新本文档
-4. 通知前端团队更新错误处理逻辑
+1. Add new sealed subclass in `OrderError.kt`
+2. Add mapping in `OrderController.toErrorResponse()`
+3. Update this document
+4. Notify frontend team to update error handling logic
 
 **示例**：
 ```kotlin
-// 1. 定义新错误类型
+// 1. Define new error type
 class PaymentFailed(
     message: String,
     val paymentId: String
 ) : OrderError(message, "PAYMENT_FAILED")
 
-// 2. 在Controller中映射
+// 2. Map in Controller
 is OrderError.PaymentFailed -> {
     log.error("Payment failed: orderId={}, paymentId={}", 
         orderId, error.paymentId)
@@ -325,7 +325,7 @@ is OrderError.PaymentFailed -> {
 }
 ```
 
-## 参考资料
+## References
 
 - [RFC 7807 - Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807)
 - [Micronaut Error Handling Guide](https://docs.micronaut.io/latest/guide/#errorHandling)

@@ -1,100 +1,100 @@
-# 🏗️ Order Service - Hexagonal Architecture Demo
+# Order Service - Hexagonal Architecture Demo
 
-> **🎉 v2.0 - 生产就绪版本 (Production-Ready)**
+> **v2.0 - Production-Ready**
 
-一个完整实现 **六边形架构（Hexagonal Architecture）** 的订单服务示例项目，基于 **Micronaut 4.9.4** + **Kotlin** + **DDD（领域驱动设计）**。
+This is a complete implementation of an order service using **Hexagonal Architecture**, built with **Micronaut 4.9.4**, **Kotlin**, and **Domain-Driven Design (DDD)** principles.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/coverage-90%25-green)
 ![Architecture](https://img.shields.io/badge/architecture-hexagonal-blue)
 ![Production Ready](https://img.shields.io/badge/status-production%20ready-success)
 
-## 🚀 最新更新 (2025-10-17)
+## Latest Updates (2025-10-17)
 
-本项目经过全面重构，已达到**生产级标准**：
+This project has been fully refactored to meet **production-level standards**:
 
-- ✅ **领域模型强化**: OrderStatus状态机 + 领域事件 (OrderPlacedEvent, OrderStatusChangedEvent)
-- ✅ **Result类型**: 统一的错误处理，无异常穿透
-- ✅ **事务管理**: @Transactional边界 + 领域事件发布
-- ✅ **ApiResponse包装**: 统一的REST API响应格式
-- ✅ **环境Profile**: dev/test/prod 自动适配器切换
-- ✅ **完整测试**: 46个测试用例，覆盖率90%+
-- ✅ **CI/CD**: GitHub Actions自动化构建和测试
-- ✅ **可视化文档**: Mermaid架构图 + 序列图
+- ✅ **Enhanced Domain Model**: OrderStatus state machine + domain events (OrderPlacedEvent, OrderStatusChangedEvent)
+- ✅ **Result Type**: Unified error handling without exception propagation
+- ✅ **Transaction Management**: @Transactional boundaries + domain event publishing
+- ✅ **ApiResponse Wrapper**: Standardized REST API response format
+- ✅ **Environment Profiles**: Automatic adapter switching for dev/test/prod
+- ✅ **Comprehensive Testing**: 46 test cases with 90%+ coverage
+- ✅ **CI/CD**: Automated building and testing with GitHub Actions
+- ✅ **Visual Documentation**: Mermaid architecture and sequence diagrams
 
-📚 **完整文档索引**: [DOCUMENTATION.md](./DOCUMENTATION.md) - 所有文档导航  
-📐 **架构文档**: [ARCHITECTURE.md](./ARCHITECTURE.md) - 深入架构设计  
-🚨 **错误处理**: [ErrorMapping.md](./ErrorMapping.md) - HTTP错误映射
+📚 **Complete Documentation Index**: [DOCUMENTATION.md](./DOCUMENTATION.md) - Navigation for all documentation  
+📐 **Architecture Documentation**: [ARCHITECTURE.md](./ARCHITECTURE.md) - In-depth architecture design  
+🚨 **Error Handling**: [ErrorMapping.md](./ErrorMapping.md) - HTTP error mapping
 
-## 📐 架构概览
+## Architecture Overview
 
-本项目严格遵循六边形架构原则，实现了：
-- ✅ **依赖倒置**：核心域不依赖外部框架
-- ✅ **端口与适配器**：清晰的入站/出站接口
-- ✅ **领域封装**：强不变式保护的领域模型 + 状态机
-- ✅ **业务语义化**：面向业务的接口命名
-- ✅ **结构化错误处理**：使用 `Result<T>` 类型替代异常流
-- ✅ **领域事件**: 事件驱动架构基础
-- ✅ **事务一致性**: 应用层事务边界
-- ✅ **可测试性**：各层独立可测，提供 Fake 实现
+This project strictly follows Hexagonal Architecture principles and implements:
+- ✅ **Dependency Inversion**: Core domain does not depend on external frameworks
+- ✅ **Ports and Adapters**: Clear inbound/outbound interfaces
+- ✅ **Domain Encapsulation**: Strong invariant protection in domain models + state machine
+- ✅ **Business Semantics**: Business-oriented interface naming
+- ✅ **Structured Error Handling**: Using `Result<T>` type instead of exception flow
+- ✅ **Domain Events**: Foundation for event-driven architecture
+- ✅ **Transaction Consistency**: Application layer transaction boundaries
+- ✅ **Testability**: Independent testing of each layer with Fake implementations
 
 ---
 
-## 🗂️ 项目结构
+## Project Structure
 
 ```
 order/
-├── core/                           # 核心层（无外部依赖）
-│   ├── domain/                     # 领域模型
-│   │   ├── Order.kt               # 订单聚合根
-│   │   ├── OrderItem.kt           # 订单项值对象
-│   │   ├── OrderId.kt             # 订单ID值对象
-│   │   └── Money.kt               # 货币值对象
-│   ├── application/                # 应用层
+├── core/                           # Core layer (no external dependencies)
+│   ├── domain/                     # Domain models
+│   │   ├── Order.kt               # Order aggregate root
+│   │   ├── OrderItem.kt           # Order item value object
+│   │   ├── OrderId.kt             # Order ID value object
+│   │   └── Money.kt               # Money value object
+│   ├── application/                # Application layer
 │   │   ├── service/
-│   │   │   └── PlaceOrderService.kt    # 业务编排服务
+│   │   │   └── PlaceOrderService.kt    # Business orchestration service
 │   │   ├── handler/
-│   │   │   └── PlaceOrderHandler.kt    # 用例处理器
+│   │   │   └── PlaceOrderHandler.kt    # Use case handler
 │   │   └── config/
-│   │       └── ApplicationConfig.kt     # 应用配置
-│   └── port/                       # 端口接口
-│       ├── incoming/               # 入站端口（用例接口）
+│   │       └── ApplicationConfig.kt     # Application configuration
+│   └── port/                       # Port interfaces
+│       ├── incoming/               # Inbound ports (use case interfaces)
 │       │   ├── PlaceOrderUseCase.kt
 │       │   └── PlaceOrderCommand.kt
-│       └── outgoing/               # 出站端口（外部依赖）
+│       └── outgoing/               # Outbound ports (external dependencies)
 │           ├── OrderRepository.kt
 │           ├── StockAvailabilityChecker.kt
 │           └── DomainEventPublisher.kt
-├── adapter/                        # 适配器层
-│   ├── incoming/http/              # HTTP 入站适配器
+├── adapter/                        # Adapter layer
+│   ├── incoming/http/              # HTTP inbound adapter
 │   │   ├── OrderController.kt
 │   │   ├── dto/
 │   │   │   └── PlaceOrderDtos.kt
 │   │   └── mapper/
-│   │       └── OrderMapper.kt     # HTTP 映射器
+│   │       └── OrderMapper.kt     # HTTP mapper
 │   ├── outgoing/
-│   │   ├── persistence/            # 持久化适配器
+│   │   ├── persistence/            # Persistence adapter
 │   │   │   └── repo/
 │   │   │       └── InMemoryOrderRepository.kt
-│   │   ├── inventory/              # 库存检查适配器
+│   │   ├── inventory/              # Inventory check adapter
 │   │   │   └── DummyStockAvailabilityChecker.kt
-│   │   └── messaging/              # 消息发布适配器
+│   │   └── messaging/              # Message publishing adapter
 │   │       └── LoggingDomainEventPublisher.kt
-└── Application.kt                  # Micronaut 启动入口
+└── Application.kt                  # Micronaut application entry point
 ```
 
 ---
 
-## 🔁 架构层次说明
+## Architecture Layer Details
 
-### 1️⃣ Domain 层（核心域）
+### 1️⃣ Domain Layer (Core Domain)
 
-**职责**：封装业务规则和不变式
+**Responsibility**: Encapsulate business rules and invariants
 
-**关键特性**：
-- 使用 **私有构造函数 + 工厂方法** 保护对象创建
-- **强不变式验证**：防止非法状态
-- 纯 Kotlin 代码，**无框架依赖**
+**Key Features**:
+- Using **private constructor + factory method** to protect object creation
+- **Strong invariant validation**: Prevent illegal states
+- Pure Kotlin code with **no framework dependencies**
 
 **示例**：
 ```kotlin
@@ -114,20 +114,20 @@ class Order private constructor(val id: OrderId, val items: List<OrderItem>) {
 
 ---
 
-### 2️⃣ Port 层（端口接口）
+### 2️⃣ Port Layer (Port Interfaces)
 
-**职责**：定义核心域与外部的交互契约
+**Responsibility**: Define interaction contracts between core domain and external systems
 
-#### 入站端口（In Ports）
-定义应用用例接口：
+#### Inbound Ports (In Ports)
+Define application use case interfaces:
 ```kotlin
 interface PlaceOrderUseCase {
     fun execute(command: PlaceOrderCommand): Result<OrderId>
 }
 ```
 
-#### 出站端口（Out Ports）
-定义外部依赖接口（业务语义化命名）：
+#### Outbound Ports (Out Ports)
+Define external dependency interfaces (with business semantic naming):
 ```kotlin
 interface StockAvailabilityChecker {  // 而非 InventoryGateway
     fun checkAndReserve(sku: String, quantity: Int): Boolean
@@ -140,11 +140,11 @@ interface DomainEventPublisher {      // 业务语义化命名
 
 ---
 
-### 3️⃣ Application 层（应用服务）
+### 3️⃣ Application Layer (Application Services)
 
-**职责**：编排业务流程，调用领域对象和外部依赖
+**Responsibility**: Orchestrate business processes, invoke domain objects and external dependencies
 
-**Handler**：用例入口，实现入站端口
+**Handler**: Use case entry point, implements inbound ports
 ```kotlin
 @Singleton
 class PlaceOrderHandler(private val service: PlaceOrderService) : PlaceOrderUseCase {
@@ -154,7 +154,7 @@ class PlaceOrderHandler(private val service: PlaceOrderService) : PlaceOrderUseC
 }
 ```
 
-**Service**：业务逻辑编排
+**Service**: Business logic orchestration
 ```kotlin
 class PlaceOrderService(
     private val repository: OrderRepository,
@@ -172,11 +172,11 @@ class PlaceOrderService(
 
 ---
 
-### 4️⃣ Adapter 层（适配器）
+### 4️⃣ Adapter Layer (Adapters)
 
-**职责**：连接外部技术与核心域
+**Responsibility**: Connect external technologies with the core domain
 
-#### HTTP 适配器（入站）
+#### HTTP Adapter (Inbound)
 ```kotlin
 @Controller("/orders")
 class OrderController(
@@ -195,7 +195,7 @@ class OrderController(
 }
 ```
 
-#### 持久化适配器（出站）
+#### Persistence Adapter (Outbound)
 ```kotlin
 @Singleton
 class InMemoryOrderRepository : OrderRepository {
@@ -206,11 +206,11 @@ class InMemoryOrderRepository : OrderRepository {
 
 ---
 
-## 🧪 测试策略
+## Testing Strategy
 
-项目提供 **三层测试**：
+The project provides **three-layer testing**:
 
-### 1️⃣ Domain 测试（纯逻辑）
+### 1️⃣ Domain Testing (Pure Logic)
 ```kotlin
 class OrderDomainTest : StringSpec({
     "Order should not allow empty items" {
@@ -221,7 +221,7 @@ class OrderDomainTest : StringSpec({
 })
 ```
 
-### 2️⃣ Application 测试（使用 Fakes）
+### 2️⃣ Application Testing (Using Fakes)
 ```kotlin
 class PlaceOrderServiceTest : StringSpec({
     "should place order successfully when stock is available" {
@@ -232,7 +232,7 @@ class PlaceOrderServiceTest : StringSpec({
 })
 ```
 
-### 3️⃣ E2E 测试（完整流程）
+### 3️⃣ E2E Testing (Complete Flow)
 ```kotlin
 @MicronautTest
 class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
@@ -248,25 +248,25 @@ class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
 
 ---
 
-## 🚀 快速开始
+## Quick Start
 
-### 前置要求
+### Prerequisites
 - JDK 21+
 - Gradle 8.5+
 
-### 构建并运行测试
+### Build and Run Tests
 ```bash
 ./gradlew clean test
 ```
 
-### 启动服务
+### Start Service
 ```bash
 ./gradlew run
 ```
 
-### 测试 API
+### Test API
 ```bash
-# 下单
+# Place Order
 curl -X POST http://localhost:8080/orders \
   -H "Content-Type: application/json" \
   -d '{
@@ -276,64 +276,64 @@ curl -X POST http://localhost:8080/orders \
     ]
   }'
 
-# 健康检查
+# Health Check
 curl http://localhost:8080/orders/health
 ```
 
 ---
 
-## 📊 架构收益对比
+## Architecture Benefits Comparison
 
-| 维度           | 改进前     | 改进后        |
+| Dimension           | Before     | After        |
 |--------------|---------|------------|
-| 依赖方向         | 模糊      | **单向向内**   |
-| Domain 封装    | 弱（数据类） | **强不变式保护** |
-| Port 命名      | 技术化     | **业务语义化**  |
-| Adapter 职责   | 混合      | **职责单一**   |
-| 错误处理         | 异常流     | **Result 类型** |
-| 测试覆盖         | 局部      | **全层覆盖**   |
-| 可扩展性         | 中       | **高**      |
-| 框架独立性        | 低       | **高**      |
+| Dependency Direction         | Unclear      | **Unidirectional Inward**   |
+| Domain Encapsulation    | Weak (data classes) | **Strong Invariant Protection** |
+| Port Naming      | Technical     | **Business Semantic**  |
+| Adapter Responsibility   | Mixed      | **Single Responsibility**   |
+| Error Handling         | Exception Flow     | **Result Type** |
+| Test Coverage         | Partial      | **Full Layer Coverage**   |
+| Extensibility         | Medium       | **High**      |
+| Framework Independence        | Low       | **High**      |
 
 ---
 
-## 🎯 核心设计原则
+## Core Design Principles
 
-1. **依赖规则**：外层依赖内层，内层不知道外层存在
-2. **接口隔离**：端口接口小而专注，面向业务语义
-3. **领域纯粹性**：Domain 层零框架依赖，100% 可测
-4. **显式错误**：使用 `Result<T>` 替代异常
-5. **不变式保护**：构造函数私有化 + 工厂方法
-6. **测试优先**：提供 Fake 实现，支持各层独立测试
+1. **Dependency Rule**: Outer layers depend on inner layers, inner layers are unaware of outer layers
+2. **Interface Segregation**: Port interfaces are small and focused, business semantic oriented
+3. **Domain Purity**: Domain layer has zero framework dependencies, 100% testable
+4. **Explicit Errors**: Using `Result<T>` instead of exceptions
+5. **Invariant Protection**: Private constructors + factory methods
+6. **Test First**: Provide Fake implementations, support independent testing of each layer
 
 ---
 
-## 🔌 扩展示例
+## Extension Examples
 
-### 添加新用例（例如：取消订单）
+### Adding New Use Cases (Example: Cancel Order)
 
-1. **定义端口**（`core/port/incoming/`）
+1. **Define Port** (`core/port/incoming/`)
    ```kotlin
    interface CancelOrderUseCase {
        fun execute(command: CancelOrderCommand): Result<Unit>
    }
    ```
 
-2. **实现 Handler**（`core/application/handler/`）
+2. **Implement Handler** (`core/application/handler/`)
    ```kotlin
    @Singleton
    class CancelOrderHandler(...) : CancelOrderUseCase
    ```
 
-3. **添加适配器**（`adapter/incoming/http/`）
+3. **Add Adapter** (`adapter/incoming/http/`)
    ```kotlin
    @Delete("/{orderId}")
    fun cancel(@PathVariable orderId: String): HttpResponse<*>
    ```
 
-### 替换实现（例如：使用 PostgreSQL）
+### Replacing Implementation (Example: Using PostgreSQL)
 
-只需创建新适配器实现 `OrderRepository` 接口：
+Simply create a new adapter implementing the `OrderRepository` interface:
 ```kotlin
 @Singleton
 @Replaces(InMemoryOrderRepository::class)
@@ -341,7 +341,7 @@ class PostgresOrderRepository : OrderRepository {
     // 使用 R2DBC/JPA 实现
 }
 ```
-**核心层代码无需修改！**
+**Core layer code requires no modification!**
 
 ---
 
@@ -354,15 +354,15 @@ class PostgresOrderRepository : OrderRepository {
 
 ---
 
-## 🛠️ 技术栈
+## Technology Stack
 
-| 技术           | 版本       | 用途        |
+| Technology           | Version       | Purpose        |
 |--------------|----------|-----------|
-| Micronaut    | 4.9.4    | Web 框架    |
-| Kotlin       | 2.1.0    | 编程语言      |
-| Kotest       | 5.9.1    | 测试框架      |
-| Gradle       | 8.5      | 构建工具      |
-| SLF4J/Logback | 1.7.x    | 日志        |
+| Micronaut    | 4.9.4    | Web Framework    |
+| Kotlin       | 2.1.0    | Programming Language      |
+| Kotest       | 5.9.1    | Testing Framework      |
+| Gradle       | 8.5      | Build Tool      |
+| SLF4J/Logback | 1.7.x    | Logging        |
 
 ---
 
@@ -372,20 +372,20 @@ MIT License
 
 ---
 
-## 🙋 常见问题
+## FAQ
 
-**Q: 为什么使用 Result 而不是直接抛异常？**  
-A: `Result` 使错误处理显式化，编译器强制处理，避免遗漏异常捕获。
+**Q: Why use Result instead of throwing exceptions directly?**  
+A: `Result` makes error handling explicit, compiler enforced, avoiding missed exception handling.
 
-**Q: 为什么 Domain 层构造函数是私有的？**  
-A: 强制通过工厂方法创建，确保所有实例都经过验证，防止非法状态。
+**Q: Why are Domain layer constructors private?**  
+A: Enforce creation through factory methods, ensuring all instances are validated, preventing illegal states.
 
-**Q: 如何添加数据库支持？**  
-A: 只需实现 `OrderRepository` 接口，无需修改核心代码。参考 `InMemoryOrderRepository`。
+**Q: How to add database support?**  
+A: Simply implement the `OrderRepository` interface without modifying core code. Refer to `InMemoryOrderRepository`.
 
-**Q: 测试覆盖率如何？**  
-A: 运行 `./gradlew test jacocoTestReport` 查看覆盖率报告。
+**Q: How to check test coverage?**  
+A: Run `./gradlew test jacocoTestReport` to view coverage report.
 
 ---
 
-**🎉 项目已重构完成，实现了生产级六边形架构标准！**
+**The project has been refactored and implements production-level hexagonal architecture standards!**

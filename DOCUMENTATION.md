@@ -1,175 +1,175 @@
-# 📚 项目文档索引
+# 📚 Project Documentation Index
 
-本文档提供项目所有文档的快速导航和概览。
+This document provides quick navigation and overview of all project documentation.
 
-## 🎯 核心文档
+## 🎯 Core Documentation
 
 ### 1. [README.md](./README.md) 🌟
-**快速开始必读**
+**Quick Start Required Reading**
 
-- 项目概览和特性介绍
-- 快速启动指南
-- 项目结构说明
-- API 使用示例
-- 技术栈清单
+- Project overview and feature introduction
+- Quick start guide
+- Project structure description
+- API usage examples
+- Technology stack list
 
-**适合人群**: 所有人，特别是首次接触本项目的开发者
+**Target Audience**: Everyone, especially developers new to this project
 
 ---
 
 ### 2. [ARCHITECTURE.md](./ARCHITECTURE.md) 🏛️
-**架构设计核心文档 (v2.0 生产就绪版)**
+**Core Architecture Design Document (v2.0 Production-Ready)**
 
-**包含内容**:
-- 🎨 系统架构全景图 (Mermaid)
-- 🔄 下单流程序列图
-- 📊 端口与适配器映射表
-- 🧪 测试策略和覆盖情况
-- 🚀 扩展指南（添加新状态、切换数据库、添加新用例）
-- 🏗️ 架构决策记录 (ADR)
-- 📚 设计模式应用
-- ✅ 最佳实践 vs ❌ 反模式
-- 📈 下一步演进方向
-- 🔄 完整重构改进历史
+**Content**:
+- 🎨 System architecture overview (Mermaid)
+- 🔄 Order placement sequence diagram
+- 📊 Port and adapter mapping table
+- 🧪 Testing strategy and coverage
+- 🚀 Extension guide (adding new states, switching databases, adding new use cases)
+- 🏗️ Architecture decision records (ADR)
+- 📚 Design pattern applications
+- ✅ Best practices vs ❌ Anti-patterns
+- 📈 Next evolution steps
+- 🔄 Complete refactoring improvement history
 
-**适合人群**: 
-- 需要深入了解架构设计的开发者
-- 准备扩展或修改系统的开发者
-- 学习六边形架构的学习者
+**Target Audience**: 
+- Developers needing in-depth understanding of architecture design
+- Developers preparing to extend or modify the system
+- Learners studying hexagonal architecture
 
-**关键主题**:
-- 六边形架构原则
-- 依赖倒置实践
-- DDD 战术模式
-- Result 类型错误处理
-- 领域事件驱动
-- 状态机设计
+**Key Topics**:
+- Hexagonal architecture principles
+- Dependency inversion practices
+- DDD tactical patterns
+- Result type error handling
+- Domain event-driven design
+- State machine design
 
 ---
 
 ### 3. [ErrorMapping.md](./ErrorMapping.md) 🚨
-**错误处理映射指南**
+**Error Handling Mapping Guide**
 
-**包含内容**:
-- 领域错误类型 → HTTP 状态码映射
-- 错误响应格式规范
-- 错误处理最佳实践
-- 各类错误场景示例
+**Content**:
+- Domain error types → HTTP status code mapping
+- Error response format specification
+- Error handling best practices
+- Examples of various error scenarios
 
-**适合人群**: 
-- API 开发者
-- 前端集成开发者
-- 错误处理机制维护者
+**Target Audience**: 
+- API developers
+- Frontend integration developers
+- Error handling mechanism maintainers
 
 ---
 
-## 📖 历史和参考文档
+## 📖 Historical and Reference Documentation
 
 ### 4. [ARCHITECTURE_v1_legacy.md](./ARCHITECTURE_v1_legacy.md) 📜
-**架构设计初始版本**
+**Initial Architecture Design Version**
 
-这是项目早期的架构文档，保留作为历史参考。
+This is the project's early architecture document, retained as historical reference.
 
-**查看原因**:
-- 了解项目演进历程
-- 对比架构改进前后的差异
-- 学习架构迭代思路
+**Reasons to Review**:
+- Understand project evolution history
+- Compare differences before and after architecture improvements
+- Learn architecture iteration thinking
 
-**建议**: 优先阅读 [ARCHITECTURE.md](./ARCHITECTURE.md)，此文档仅作参考
-
----
-
-### 5. 重构历史 🔄
-
-重构的详细历史已经整合到 [ARCHITECTURE.md](./ARCHITECTURE.md) 的 "重构改进历史" 章节中，包含完整的 6 个 Phase 改进说明。
+**Recommendation**: Prioritize reading [ARCHITECTURE.md](./ARCHITECTURE.md), this document is for reference only
 
 ---
 
-## 🗺️ 阅读路线图
+### 5. Refactoring History 🔄
 
-### 🎯 快速上手路线 (30分钟)
+The detailed refactoring history has been integrated into the "Refactoring Improvement History" section of [ARCHITECTURE.md](./ARCHITECTURE.md), including complete 6-phase improvement descriptions.
+
+---
+
+## 🗺️ Reading Roadmap
+
+### 🎯 Quick Start Route (30 minutes)
 ```
-README.md → 运行项目 → 测试 API
+README.md → Run project → Test API
 ```
 
-### 📚 架构学习路线 (2-3小时)
+### 📚 Architecture Learning Route (2-3 hours)
 ```
 README.md 
   ↓
-ARCHITECTURE.md (重点阅读)
+ARCHITECTURE.md (Key reading)
   ↓
 ErrorMapping.md
   ↓
-代码实践：阅读 core/ 目录源码
+Code practice: Read core/ directory source code
 ```
 
-### 🔧 开发者深入路线 (1天)
+### 🔧 Developer Deep Dive Route (1 day)
 ```
 README.md
   ↓
 ARCHITECTURE.md
   ↓
-研究测试代码 (src/test/)
+Study test code (src/test/)
   ↓
-对比 ARCHITECTURE_v1_legacy.md
+Compare ARCHITECTURE_v1_legacy.md
   ↓
-实践：扩展新功能
+Practice: Extend new features
 ```
 
 ---
 
-## 📂 文档 vs 代码映射
+## 📂 Documentation vs Code Mapping
 
-| 文档章节 | 对应代码位置 | 说明 |
+| Document Section | Corresponding Code Location | Description |
 |---------|-------------|------|
-| **Domain 层设计** | `core/domain/` | 聚合根、值对象、领域事件 |
-| **Port 层接口** | `core/port/incoming/`, `core/port/outgoing/` | 入站/出站端口定义 |
-| **Application 层** | `core/application/` | Handler 和 Service |
-| **Adapter 层** | `adapter/incoming/`, `adapter/outgoing/` | HTTP、持久化、消息适配器 |
-| **测试策略** | `src/test/kotlin/` | 单元、集成、E2E 测试 |
-| **错误处理** | `core/domain/OrderError.kt` | Sealed 错误类型 |
-| **配置管理** | `src/main/resources/application-*.yml` | 环境配置 |
+| **Domain Layer Design** | `core/domain/` | Aggregate roots, value objects, domain events |
+| **Port Layer Interfaces** | `core/port/incoming/`, `core/port/outgoing/` | Inbound/outbound port definitions |
+| **Application Layer** | `core/application/` | Handlers and Services |
+| **Adapter Layer** | `adapter/incoming/`, `adapter/outgoing/` | HTTP, persistence, messaging adapters |
+| **Testing Strategy** | `src/test/kotlin/` | Unit, integration, E2E tests |
+| **Error Handling** | `core/domain/OrderError.kt` | Sealed error types |
+| **Configuration Management** | `src/main/resources/application-*.yml` | Environment configuration |
 
 ---
 
-## 🎓 按学习目标分类
+## 🎓 Categorized by Learning Objectives
 
-### 学习六边形架构
-📖 主读: `ARCHITECTURE.md` - 架构层次说明、依赖规则  
-💻 实践: 对比 `core/` 和 `adapter/` 的依赖方向
+### Learning Hexagonal Architecture
+📖 Main Reading: `ARCHITECTURE.md` - Architecture layer description, dependency rules  
+💻 Practice: Compare dependency directions of `core/` and `adapter/`
 
-### 学习 DDD 战术模式
-📖 主读: `ARCHITECTURE.md` - Domain 层设计、聚合根  
-💻 实践: 研究 `Order.kt`, `OrderItem.kt`, `Money.kt`
+### Learning DDD Tactical Patterns
+📖 Main Reading: `ARCHITECTURE.md` - Domain layer design, aggregate roots  
+💻 Practice: Study `Order.kt`, `OrderItem.kt`, `Money.kt`
 
-### 学习 Result 类型错误处理
-📖 主读: `ErrorMapping.md` + `ARCHITECTURE.md` (最佳实践章节)  
-💻 实践: 追踪 `PlaceOrderService.kt` 的错误流转
+### Learning Result Type Error Handling
+📖 Main Reading: `ErrorMapping.md` + `ARCHITECTURE.md` (Best practices section)  
+💻 Practice: Trace error flow in `PlaceOrderService.kt`
 
-### 学习测试策略
-📖 主读: `ARCHITECTURE.md` - 测试覆盖情况  
-💻 实践: 运行测试并阅读 `src/test/` 目录
+### Learning Testing Strategy
+📖 Main Reading: `ARCHITECTURE.md` - Test coverage  
+💻 Practice: Run tests and read `src/test/` directory
 
-### 学习状态机设计
-📖 主读: `ARCHITECTURE.md` - OrderStatus 状态机  
-💻 实践: 研究 `OrderStatus.kt` 和状态转换测试
-
----
-
-## 📝 贡献文档
-
-如果你修改了架构或添加了新功能，请：
-
-1. ✅ 更新 `ARCHITECTURE.md` 相关章节
-2. ✅ 如有新错误类型，更新 `ErrorMapping.md`
-3. ✅ 在 `README.md` 中更新示例（如有必要）
-4. ✅ 添加相应的测试并更新测试覆盖率说明
+### Learning State Machine Design
+📖 Main Reading: `ARCHITECTURE.md` - OrderStatus state machine  
+💻 Practice: Study `OrderStatus.kt` and state transition tests
 
 ---
 
-## 🔗 外部参考资料
+## 📝 Contributing Documentation
 
-本项目基于以下经典理论和最佳实践：
+If you've modified the architecture or added new features, please:
+
+1. ✅ Update relevant sections in `ARCHITECTURE.md`
+2. ✅ Update `ErrorMapping.md` if there are new error types
+3. ✅ Update examples in `README.md` if necessary
+4. ✅ Add corresponding tests and update test coverage documentation
+
+---
+
+## 🔗 External References
+
+This project is based on the following classic theories and best practices:
 
 - [Hexagonal Architecture (Alistair Cockburn)](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Clean Architecture (Robert C. Martin)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
@@ -179,15 +179,15 @@ ARCHITECTURE.md
 
 ---
 
-## 📞 需要帮助？
+## 📞 Need Help?
 
-1. **架构疑问**: 查阅 `ARCHITECTURE.md` 或提 Issue
-2. **API 使用**: 查阅 `README.md` 快速开始章节
-3. **错误处理**: 查阅 `ErrorMapping.md`
-4. **代码示例**: 参考 `src/test/` 目录的测试用例
+1. **Architecture Questions**: Refer to `ARCHITECTURE.md` or file an Issue
+2. **API Usage**: Refer to `README.md` quick start section
+3. **Error Handling**: Refer to `ErrorMapping.md`
+4. **Code Examples**: Refer to test cases in `src/test/` directory
 
 ---
 
-**最后更新**: 2025-10-17  
-**文档版本**: v2.0
+**Last Updated**: 2025-10-17  
+**Document Version**: v2.0
 

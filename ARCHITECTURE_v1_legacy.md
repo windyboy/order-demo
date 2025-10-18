@@ -1,22 +1,12 @@
-# 🏛️ 架构设计文档
+# 🏛️ Architecture Design Document
 
-## 📐 六边形架构图示
+## 📐 Hexagonal Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        外部世界 (External)                        │
-│                                                                   │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐      │
-│  │   HTTP Client │    │  Inventory   │    │   Message    │      │
-│  │   (Browser)   │    │   Service    │    │    Queue     │      │
-│  └───────┬──────┘    └──────┬───────┘    └──────┬───────┘      │
-└──────────┼──────────────────┼────────────────────┼──────────────┘
-           │                   │                    │
-           │                   │                    │
-┌──────────▼───────────────────▼────────────────────▼──────────────┐
-│                      适配器层 (Adapters)                          │
+│                      Adapter Layer (Adapters)                   │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │  入站适配器 (Inbound)    │   出站适配器 (Outbound)           │ │
+│  │  Inbound Adapters    │   Outbound Adapters                  │ │
 │  │  ┌────────────────┐      │   ┌──────────────────────────┐  │ │
 │  │  │ OrderController│◄─────┼───│ StockAvailabilityChecker │  │ │
 │  │  │                │      │   │   (Dummy)                │  │ │
@@ -35,12 +25,12 @@
 │  └─────────────────────────────────────────────────────────────┘ │
 └───────────────────────────┬───────────────────────────────────────┘
                             │
-                            │ 端口 (Ports)
+                            │ Ports
                             │
 ┌───────────────────────────▼───────────────────────────────────────┐
-│                       核心层 (Core)                                │
+│                       Core Layer                                 │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                   Port 层 (接口定义)                          │ │
+│  │                   Port Layer (Interface Definitions)        │ │
 │  │  ┌──────────────────┐          ┌────────────────────────┐  │ │
 │  │  │  PlaceOrderUseCase│◄─────────│StockAvailabilityChecker│  │ │
 │  │  │   (In Port)       │          │    (Out Port)          │  │ │
@@ -56,7 +46,7 @@
 │  └────────────┼─────────────────────────────────────────────────┘ │
 │               │                                                   │
 │  ┌────────────▼─────────────────────────────────────────────────┐ │
-│  │                 Application 层 (用例实现)                      │ │
+│  │                 Application Layer (Use Case Implementation) │ │
 │  │  ┌──────────────────┐         ┌────────────────────────┐    │ │
 │  │  │PlaceOrderHandler │────────►│ PlaceOrderService      │    │ │
 │  │  │  implements      │         │  (Business Logic)      │    │ │
@@ -65,22 +55,22 @@
 │  └───────────────────────────────────────────────────────────────┘ │
 │               │                                                   │
 │  ┌────────────▼─────────────────────────────────────────────────┐ │
-│  │                    Domain 层 (领域模型)                       │ │
+│  │                    Domain Layer (Domain Models)             │ │
 │  │  ┌──────────┐  ┌───────────┐  ┌───────┐  ┌───────────┐     │ │
 │  │  │  Order   │  │ OrderItem │  │ Money │  │  OrderId  │     │ │
 │  │  │(Aggregate)│  │  (Value)  │  │(Value)│  │  (Value)  │     │ │
 │  │  └──────────┘  └───────────┘  └───────┘  └───────────┘     │ │
 │  │                                                               │ │
-│  │  特性:                                                        │ │
-│  │  ✓ 私有构造函数 + 工厂方法                                    │ │
-│  │  ✓ 强不变式验证                                              │ │
-│  │  ✓ 无框架依赖                                                │ │
-│  │  ✓ 纯业务逻辑                                                │ │
+│  │  Features:                                                    │ │
+│  │  ✓ Private constructor + factory method                      │ │
+│  │  ✓ Strong invariant validation                               │ │
+│  │  ✓ No framework dependencies                                 │ │
+│  │  ✓ Pure business logic                                       │ │
 │  └───────────────────────────────────────────────────────────────┘ │
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-## 🔄 数据流示例（下单流程）
+## 🔄 Data Flow Example (Order Placement Process)
 
 ```
 1. HTTP Request ────────────────────────────────────────────┐
@@ -100,16 +90,16 @@
 4. PlaceOrderService (Application) ◄────────────────────────┘
    │
    ├─► StockAvailabilityChecker.checkAndReserve(sku, qty)
-   │   └─► return true  (库存充足)
+   │   └─► return true  (Sufficient stock)
    │
-   ├─► Order.create(items)  (Domain 验证)
+   ├─► Order.create(items)  (Domain validation)
    │   └─► return Order(id, items)
    │
    ├─► OrderRepository.save(order)
-   │   └─► 保存到内存
+   │   └─► Save to memory
    │
    ├─► OrderPlacedNotifier.notify(order)
-   │   └─► 记录日志
+   │   └─► Log record
    │
    └─► return Result.success(orderId)
    
@@ -123,42 +113,42 @@
    }
 ```
 
-## 🎯 依赖规则
+## 🎯 Dependency Rules
 
 ```
 ┌─────────────────────────────────────────┐
-│  外层依赖内层，内层不知道外层存在         │
+│  Outer layers depend on inner layers, inner layers are unaware of outer layers │
 └─────────────────────────────────────────┘
 
 Adapter ──────► Port ──────► Application ──────► Domain
-  (适配器)      (接口)       (用例)             (领域)
+  (Adapter)     (Interface)   (Use Case)         (Domain)
 
-✓ Adapter 依赖 Port 和 Domain（但不依赖Application）
-✓ Application 依赖 Port 和 Domain
-✓ Port 依赖 Domain
-✓ Domain 不依赖任何层
-✗ Domain 不能依赖 Application/Port/Adapter
-✗ Application 不能依赖 Adapter
-✗ Adapter 不能直接依赖 Application（只能通过Port接口）
+✓ Adapter depends on Port and Domain (but not Application)
+✓ Application depends on Port and Domain
+✓ Port depends on Domain
+✓ Domain does not depend on any layer
+✗ Domain cannot depend on Application/Port/Adapter
+✗ Application cannot depend on Adapter
+✗ Adapter cannot directly depend on Application (only through Port interface)
 ```
 
-## 🧩 各层职责详解
+## 🧩 Detailed Layer Responsibilities
 
-### Domain 层 (核心域)
-**责任**: 封装业务规则和不变式
+### Domain Layer (Core Domain)
+**Responsibility**: Encapsulate business rules and invariants
 
-**特性**:
-- 无框架依赖
-- 私有构造函数 + 工厂方法
-- 强不变式验证
-- 纯 Kotlin 代码
+**Features**:
+- No framework dependencies
+- Private constructor + factory method
+- Strong invariant validation
+- Pure Kotlin code
 
 **示例**:
 ```kotlin
 // ❌ 不好的做法
 data class Order(val id: String, val items: List<OrderItem>, val total: BigDecimal)
 
-// ✅ 好的做法
+// ✅ Good practice
 class Order private constructor(val id: OrderId, val items: List<OrderItem>) {
     init {
         require(items.isNotEmpty()) { "Order must contain at least one item" }
@@ -170,62 +160,62 @@ class Order private constructor(val id: OrderId, val items: List<OrderItem>) {
 }
 ```
 
-### Port 层 (端口接口)
-**责任**: 定义核心域与外部的交互契约
+### Port Layer (Port Interfaces)
+**Responsibility**: Define interaction contracts between core domain and external systems
 
-**入站端口 (In Port)**:
-- 定义应用用例接口
-- 面向业务语义命名
-- 返回 Result 类型
+**Inbound Port (In Port)**:
+- Define application use case interfaces
+- Business semantic naming
+- Return Result type
 
-**出站端口 (Out Port)**:
-- 定义外部依赖接口
-- 业务语义化命名 (非技术化)
-- 单一职责原则
+**Outbound Port (Out Port)**:
+- Define external dependency interfaces
+- Business semantic naming (non-technical)
+- Single responsibility principle
 
-**命名对比**:
+**Naming Comparison**:
 ```kotlin
-// ❌ 技术化命名
+// ❌ Technical naming
 interface InventoryGateway
 interface OrderEventPublisher
 
-// ✅ 业务语义化命名
+// ✅ Business semantic naming
 interface StockAvailabilityChecker
 interface OrderPlacedNotifier
 ```
 
-### Application 层 (应用服务)
-**责任**: 编排业务流程，协调领域对象和外部依赖
+### Application Layer (Application Services)
+**Responsibility**: Orchestrate business processes, coordinate domain objects and external dependencies
 
 **Handler**:
-- 实现入站端口
-- 用例入口点
-- 薄层，仅转发
+- Implement inbound ports
+- Use case entry point
+- Thin layer, forwarding only
 
 **Service**:
-- 业务逻辑编排
-- 调用领域对象
-- 调用出站端口
-- 返回 Result 类型
+- Business logic orchestration
+- Call domain objects
+- Call outbound ports
+- Return Result type
 
-**错误处理**:
+**Error Handling**:
 ```kotlin
-// ❌ 不好的做法 (抛异常)
+// ❌ Bad practice (throwing exceptions)
 fun placeOrder(items: List<OrderItem>): Order {
     if (!stockChecker.check()) throw InsufficientStockException()
     return order
 }
 
-// ✅ 好的做法 (返回 Result with OrderError)
+// ✅ Good practice (returning Result with OrderError)
 fun placeOrder(items: List<OrderItem>): Result<OrderId> {
     if (!stockChecker.check()) return Result.failure(OrderError.InsufficientStock())
     return Result.success(order.id)
 }
 ```
 
-**领域错误类型**:
+**Domain Error Types**:
 ```kotlin
-// Domain层定义错误类型
+// Domain layer defines error types
 sealed interface OrderError {
     val message: String
     val code: String
@@ -235,31 +225,31 @@ sealed interface OrderError {
 }
 ```
 
-### Adapter 层 (适配器)
-**责任**: 连接外部技术与核心域
+### Adapter Layer (Adapters)
+**Responsibility**: Connect external technologies with the core domain
 
-**入站适配器**:
+**Inbound Adapters**:
 - HTTP Controller
-- 消息队列监听器
-- 定时任务
+- Message queue listener
+- Scheduled tasks
 
-**出站适配器**:
-- 数据库实现
-- 外部服务调用
-- 消息发布
+**Outbound Adapters**:
+- Database implementation
+- External service calls
+- Message publishing
 
 **Mapper**:
-- DTO ↔ Domain 转换
-- 保持层次解耦
+- DTO ↔ Domain conversion
+- Maintain layer decoupling
 
-**重要**:
-- Adapter **只依赖** Port（接口）和 Domain（错误类型等）
-- Adapter **不应该** 直接依赖 Application 层的具体实现
-- 这保证了架构的依赖倒置原则
+**Important**:
+- Adapter **only depends on** Port (interfaces) and Domain (error types, etc.)
+- Adapter **should not** directly depend on Application layer implementations
+- This ensures the architecture's dependency inversion principle
 
-## 📊 测试策略
+## 📊 Testing Strategy
 
-### 1. Domain 测试 (单元测试)
+### 1. Domain Testing (Unit Testing)
 ```kotlin
 class OrderDomainTest : StringSpec({
     "should not allow empty items" {
@@ -270,7 +260,7 @@ class OrderDomainTest : StringSpec({
 })
 ```
 
-### 2. Application 测试 (集成测试)
+### 2. Application Testing (Integration Testing)
 ```kotlin
 class PlaceOrderServiceTest : StringSpec({
     val repository = FakeOrderRepository()
@@ -285,7 +275,7 @@ class PlaceOrderServiceTest : StringSpec({
 })
 ```
 
-### 3. E2E 测试 (端到端)
+### 3. E2E Testing (End-to-End)
 ```kotlin
 @MicronautTest
 class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
@@ -296,34 +286,34 @@ class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
 })
 ```
 
-## 🔌 扩展点
+## 🔌 Extension Points
 
-### 添加新用例
-1. 定义 Port (`core/port/in/`)
-2. 实现 Handler (`core/application/handler/`)
-3. 实现 Service (`core/application/service/`)
-4. 添加 Adapter (`adapter/in/http/`)
+### Adding New Use Cases
+1. Define Port (`core/port/in/`)
+2. Implement Handler (`core/application/handler/`)
+3. Implement Service (`core/application/service/`)
+4. Add Adapter (`adapter/in/http/`)
 
-### 替换实现
-只需创建新的 Adapter 实现即可，无需修改核心代码：
+### Replacing Implementation
+Simply create a new Adapter implementation without modifying core code:
 
 ```kotlin
 @Singleton
 @Replaces(InMemoryOrderRepository::class)
 class PostgresOrderRepository : OrderRepository {
-    // 使用 JPA/R2DBC 实现
+    // Implementation using JPA/R2DBC
 }
 ```
 
-## 🎓 设计原则
+## 🎓 Design Principles
 
-1. **依赖倒置原则 (DIP)**: 高层模块不依赖低层模块
-2. **接口隔离原则 (ISP)**: 接口小而专注
-3. **单一职责原则 (SRP)**: 每个类只有一个变化的理由
-4. **开闭原则 (OCP)**: 对扩展开放，对修改封闭
-5. **里氏替换原则 (LSP)**: 子类可以替换父类
+1. **Dependency Inversion Principle (DIP)**: High-level modules do not depend on low-level modules
+2. **Interface Segregation Principle (ISP)**: Interfaces are small and focused
+3. **Single Responsibility Principle (SRP)**: Each class has only one reason to change
+4. **Open/Closed Principle (OCP)**: Open for extension, closed for modification
+5. **Liskov Substitution Principle (LSP)**: Subclasses can replace parent classes
 
-## 📚 参考资料
+## 📚 References
 
 - [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
@@ -332,5 +322,5 @@ class PostgresOrderRepository : OrderRepository {
 
 ---
 
-**此架构确保了高内聚、低耦合、可测试性和可维护性。** 🚀
+**This architecture ensures high cohesion, low coupling, testability, and maintainability.** 🚀
 
