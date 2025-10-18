@@ -15,37 +15,37 @@ flowchart TB
     
     subgraph Adapter["🔌 Adapter Layer"]
         subgraph InboundAdapter["Inbound Adapters"]
-            Controller[OrderController<br/>+ place()<br/>+ health()]
-            Mapper[OrderMapper<br/>DTO ↔ Domain]
+            Controller[OrderController\n+ place()\n+ health()]
+            Mapper[OrderMapper\nDTO ↔ Domain]
         end
         
         subgraph OutboundAdapter["Outbound Adapters"]
-            RepoImpl[InMemoryOrderRepository<br/>implements OrderRepository]
-            StockImpl[DummyStockChecker<br/>implements StockAvailabilityChecker]
-            EventImpl[LoggingEventPublisher<br/>implements DomainEventPublisher]
+            RepoImpl[InMemoryOrderRepository\nimplements OrderRepository]
+            StockImpl[DummyStockChecker\nimplements StockAvailabilityChecker]
+            EventImpl[LoggingEventPublisher\nimplements DomainEventPublisher]
         end
     end
     
     subgraph Core["⚡ Core Layer"]
         subgraph Port["Port Layer"]
-            InPort[PlaceOrderUseCase<br/>Inbound Port]
-            OutPort1[OrderRepository<br/>Outbound Port]
-            OutPort2[StockAvailabilityChecker<br/>Outbound Port]
-            OutPort3[DomainEventPublisher<br/>Outbound Port]
+            InPort[PlaceOrderUseCase\nInbound Port]
+            OutPort1[OrderRepository\nOutbound Port]
+            OutPort2[StockAvailabilityChecker\nOutbound Port]
+            OutPort3[DomainEventPublisher\nOutbound Port]
         end
         
         subgraph Application["Application Layer"]
-            Handler[PlaceOrderHandler<br/>Implements PlaceOrderUseCase]
-            Service[PlaceOrderService<br/>@Transactional<br/>Business Logic Orchestration]
+            Handler[PlaceOrderHandler\nImplements PlaceOrderUseCase]
+            Service[PlaceOrderService\n@Transactional\nBusiness Logic Orchestration]
         end
         
         subgraph Domain["Domain Layer"]
-            Order[Order Aggregate Root<br/>+ status: OrderStatus<br/>+ domainEvents]
+            Order[Order Aggregate Root\n+ status: OrderStatus\n+ domainEvents]
             OrderItem[OrderItem Value Object]
             Money[Money Value Object]
-            OrderStatus[OrderStatus Enum<br/>NEW/CONFIRMED/...]
-            Events[Domain Events<br/>OrderPlacedEvent<br/>OrderStatusChangedEvent]
-            OrderError[OrderError<br/>sealed class]
+            OrderStatus[OrderStatus Enum\nNEW/CONFIRMED/...]
+            Events[Domain Events\nOrderPlacedEvent\nOrderStatusChangedEvent]
+            OrderError[OrderError\nsealed class]
         end
     end
     
