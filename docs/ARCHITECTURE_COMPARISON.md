@@ -206,7 +206,7 @@ class OrderController {
       (PlaceOrderUseCase)
               ↓
       Application Layer
-    (PlaceOrderService)
+    (OrderPlacementHandler)
               ↓
         Domain Layer
    (Order, Money, OrderItem)
@@ -271,36 +271,89 @@ interface StockAvailabilityChecker {
 // ============================================
 
 @Singleton
-class PlaceOrderHandler(
-    private val service: PlaceOrderService
+class OrderPlacementHandler(
+    private val repository: OrderRepository,
+    private val stockChecker: StockAvailabilityChecker,
+    private val eventPublisher: DomainEventPublisher,
 ) : PlaceOrderUseCase {  // ✅ Implements inbound port
-    override fun execute(command: PlaceOrderCommand) = service.placeOrder(command.items)
-}
 
-class PlaceOrderService(
-    private val repository: OrderRepository,  // ✅ Depends on interface
-    private val stockChecker: StockAvailabilityChecker,  // ✅ Depends on interface
-    private val eventPublisher: DomainEventPublisher  // ✅ Depends on interface
-) {
-    @Transactional
-    fun placeOrder(items: List<OrderItem>): Result<OrderId> {
-        // 1. Check stock via PORT
-        stockChecker.checkAndReserve(...)
-        
-        // 2. Create domain object (business logic in domain!)
-        val order = Order.create(items)
-        
-        // 3. Save via PORT
-        repository.save(order)
-        
-        // 4. Publish events via PORT
-        eventPublisher.publishAll(order.pullDomainEvents())
-        
-        return Result.success(order.id)
+    override fun execute(command: PlaceOrderCommand): Result<OrderId> {
+        return validate(command)
+            .flatMap(::reserveStock)
+            .flatMap(::createAggregate)
+            .flatMap(::persistAndPublish)
+    }
+
+    private fun validate(command: PlaceOrderCommand): Result<PlaceOrderCommand> {
+        return if (command.items.isEmpty()) {
+            Result.failure(OrderError.InvalidOrder("Order must contain at least one item"))
+        } else {
+            Result.success(command)
+        }
+    }
+
+    private fun reserveStock(command: PlaceOrderCommand): Result<PlaceOrderCommand> {
+        val unavailable = command.items.filter { item ->
+            stockChecker.checkAndReserve(item.sku, item.quantity).isFailure
+        }
+        return if (unavailable.isEmpty()) {
+            Result.success(command)
+        } else {
+            Result.failure(
+                OrderError.InsufficientStock(
+                    message = "Items out of stock: ${unavailable.joinToString { it.sku }}",
+                    unavailableItems = unavailable.map { it.sku },
+                ),
+            )
+        }
+    }
+
+    private fun createAggregate(command: PlaceOrderCommand): Result<Order> {
+        return runCatching { Order.create(command.items) }.fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { throwable ->
+                Result.failure(
+                    OrderError.DomainViolation(
+                        message = throwable.message ?: "Failed to create order",
+                        cause = throwable,
+                    ),
+                )
+            },
+        )
+    }
+
+    private fun persistAndPublish(order: Order): Result<OrderId> {
+        return repository.save(order).fold(
+            onSuccess = { orderId ->
+                eventPublisher.publishAll(order.pullDomainEvents()).fold(
+                    onSuccess = { Result.success(orderId) },
+                    onFailure = { throwable ->
+                        Result.failure(
+                            OrderError.OrderPlacementFailed(
+                                message = "Failed to publish domain events: ${throwable.message}",
+                                cause = throwable,
+                            ),
+                        )
+                    },
+                )
+            },
+            onFailure = { throwable ->
+                Result.failure(
+                    OrderError.OrderPlacementFailed(
+                        message = "Failed to persist order: ${throwable.message}",
+                        cause = throwable,
+                    ),
+                )
+            },
+        )
     }
 }
 
 // ============================================
+// ADAPTER LAYER (Infrastructure)
+// ============================================
+
+// HTTP Adapter (Inbound)// ============================================
 // ADAPTER LAYER (Infrastructure)
 // ============================================
 

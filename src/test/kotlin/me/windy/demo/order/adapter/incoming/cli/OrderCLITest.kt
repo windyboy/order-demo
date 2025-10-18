@@ -3,8 +3,7 @@ package me.windy.demo.order.adapter.incoming.cli
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import me.windy.demo.order.core.application.handler.PlaceOrderHandler
-import me.windy.demo.order.core.application.service.PlaceOrderService
+import me.windy.demo.order.core.application.usecase.OrderPlacementHandler
 import me.windy.demo.order.core.fakes.FakeDomainEventPublisher
 import me.windy.demo.order.core.fakes.FakeOrderRepository
 import me.windy.demo.order.core.fakes.FakeStockAvailabilityChecker
@@ -22,8 +21,7 @@ class OrderCLITest : StringSpec({
         val stockChecker = FakeStockAvailabilityChecker(availableStock = true)
         val eventPublisher = FakeDomainEventPublisher()
 
-        val service = PlaceOrderService(repository, stockChecker, eventPublisher)
-        val useCase: PlaceOrderUseCase = PlaceOrderHandler(service)
+        val useCase: PlaceOrderUseCase = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
         // CLI adapter uses the SAME use case!
         val cli = OrderCLI(useCase)

@@ -56,30 +56,23 @@ fun place(@Body request: PlaceOrderRequest) {
 **Key Point**: Controller depends on `PlaceOrderUseCase` interface, not concrete implementation!
 
 #### Step 2: Application Layer
-**Files**: `PlaceOrderHandler.kt` → `PlaceOrderService.kt`
+**File**: `OrderPlacementHandler.kt`
 ```kotlin
-// Handler implements the inbound port
-class PlaceOrderHandler : PlaceOrderUseCase {
-    fun execute(command: PlaceOrderCommand) = service.placeOrder(command.items)
-}
+// Application use case drives the workflow
+class OrderPlacementHandler(
+    private val repository: OrderRepository,
+    private val stockChecker: StockAvailabilityChecker,
+    private val eventPublisher: DomainEventPublisher,
+) : PlaceOrderUseCase {
 
-// Service orchestrates business logic
-@Transactional
-fun placeOrder(items: List<OrderItem>) {
-    // Check stock (via outbound port)
-    stockChecker.checkAndReserve(...)
-    
-    // Create domain object
-    val order = Order.create(items)  // Domain logic!
-    
-    // Save (via outbound port)
-    repository.save(order)
-    
-    // Publish events (via outbound port)
-    eventPublisher.publishAll(order.pullDomainEvents())
+    override fun execute(command: PlaceOrderCommand): Result<OrderId> =
+        validate(command)
+            .flatMap(::reserveStock)
+            .flatMap(::createAggregate)
+            .flatMap(::persistAndPublish)
 }
 ```
-**Key Point**: Service depends on PORT interfaces, orchestrates, but contains NO business rules!
+**Key Point**: The workflow is expressed as a Result pipeline on ports; there is no extra delegation layer.
 
 #### Step 3: Domain Layer
 **File**: `Order.kt`
@@ -172,10 +165,8 @@ order/
 │   │   ├── OrderId.kt             # Order ID value object
 │   │   └── Money.kt               # Money value object
 │   ├── application/                # Application layer
-│   │   ├── service/
-│   │   │   └── PlaceOrderService.kt    # Business orchestration service
-│   │   ├── handler/
-│   │   │   └── PlaceOrderHandler.kt    # Use case handler
+│   │   ├── usecase/
+│   │   │   └── OrderPlacementHandler.kt    # Use case orchestration pipeline
 │   │   └── config/
 │   │       └── ApplicationConfig.kt     # Application configuration
 │   └── port/                       # Port interfaces
@@ -263,35 +254,34 @@ interface DomainEventPublisher {      // 业务语义化命名
 
 ### 3️⃣ Application Layer (Application Services)
 
-**Responsibility**: Orchestrate business processes, invoke domain objects and external dependencies
+**Responsibility**: Orchestrate business processes by coordinating domain objects and outbound ports.
 
-**Handler**: Use case entry point, implements inbound ports
+**Use Case Implementation**: Implements the inbound port as a workflow pipeline.
 ```kotlin
 @Singleton
-class PlaceOrderHandler(private val service: PlaceOrderService) : PlaceOrderUseCase {
-    override fun execute(command: PlaceOrderCommand): Result<OrderId> {
-        return service.placeOrder(command.items)
-    }
-}
-```
-
-**Service**: Business logic orchestration
-```kotlin
-class PlaceOrderService(
+class OrderPlacementHandler(
     private val repository: OrderRepository,
     private val stockChecker: StockAvailabilityChecker,
-    private val eventPublisher: DomainEventPublisher
-) {
-    fun placeOrder(items: List<OrderItem>): Result<OrderId> {
-        // 1. 检查库存
-        // 2. 创建订单（领域验证）
-        // 3. 保存订单
-        // 4. 发布领域事件
-    }
+    private val eventPublisher: DomainEventPublisher,
+) : PlaceOrderUseCase {
+
+    override fun execute(command: PlaceOrderCommand): Result<OrderId> =
+        validate(command)
+            .flatMap(::reserveStock)
+            .flatMap(::createAggregate)
+            .flatMap(::persistAndPublish)
 }
 ```
 
----
+**Workflow Steps**
+1. Validate command (ensure at least one item)
+2. Reserve stock via outbound port
+3. Create aggregate (domain invariants + domain events)
+4. Persist via repository port
+5. Publish raised domain events
+
+**Key Point**: The use case itself documents the orchestration—no extra delegation layer.
+
 
 ### 4️⃣ Adapter Layer (Adapters)
 
@@ -344,7 +334,7 @@ class OrderDomainTest : StringSpec({
 
 ### 2️⃣ Application Testing (Using Fakes)
 ```kotlin
-class PlaceOrderServiceTest : StringSpec({
+class OrderPlacementHandlerTest : StringSpec({
     "should place order successfully when stock is available" {
         val repository = FakeOrderRepository()
         val stockChecker = FakeStockAvailabilityChecker(available = true)
