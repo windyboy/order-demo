@@ -17,13 +17,11 @@ data class OrderPlacedEvent(
     val totalAmount: Money,
     val itemCount: Int,
     override val eventId: String = java.util.UUID.randomUUID().toString(),
-    override val occurredAt: Instant = Instant.now()
+    override val occurredAt: Instant = Instant.now(),
 ) : BaseDomainEvent(eventId, occurredAt) {
-    
     override val eventType: String = "OrderPlaced"
-    
+
     companion object {
         const val EVENT_TYPE = "OrderPlaced"
     }
 }
-

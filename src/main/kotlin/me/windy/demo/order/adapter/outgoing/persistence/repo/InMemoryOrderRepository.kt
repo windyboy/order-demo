@@ -16,33 +16,36 @@ import java.util.concurrent.ConcurrentHashMap
 @Singleton
 @Requires(missingBeans = [OrderRepository::class])
 class InMemoryOrderRepository : OrderRepository {
-    
     private val log = LoggerFactory.getLogger(InMemoryOrderRepository::class.java)
     private val store = ConcurrentHashMap<String, Order>()
 
     override fun save(order: Order): Result<OrderId> {
         return runCatching {
             store[order.id.value] = order
-            log.debug("Order saved: id={}, items={}, status={}", 
-                order.id.value, order.items.size, order.status)
+            log.debug(
+                "Order saved: id={}, items={}, status={}",
+                order.id.value,
+                order.items.size,
+                order.status,
+            )
             order.id
         }
     }
-    
+
     override fun findById(id: OrderId): Result<Order> {
         return runCatching {
             store[id.value] ?: throw NoSuchElementException("Order not found: ${id.value}")
         }
     }
-    
+
     override fun exists(id: OrderId): Boolean {
         return store.containsKey(id.value)
     }
-    
+
     override fun count(): Int {
         return store.size
     }
-    
+
     /**
      * Clears all orders. Useful for testing.
      */

@@ -12,12 +12,12 @@ interface DomainEvent {
      * Unique identifier for this event instance.
      */
     val eventId: String
-    
+
     /**
      * When this event occurred.
      */
     val occurredAt: Instant
-    
+
     /**
      * Type of the event (for routing/filtering).
      */
@@ -29,6 +29,5 @@ interface DomainEvent {
  */
 abstract class BaseDomainEvent(
     override val eventId: String = UUID.randomUUID().toString(),
-    override val occurredAt: Instant = Instant.now()
+    override val occurredAt: Instant = Instant.now(),
 ) : DomainEvent
-

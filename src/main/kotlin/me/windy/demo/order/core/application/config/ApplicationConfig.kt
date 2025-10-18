@@ -14,7 +14,6 @@ import me.windy.demo.order.core.port.outgoing.StockAvailabilityChecker
  */
 @Factory
 class ApplicationConfig {
-    
     /**
      * Creates the PlaceOrderService with all required dependencies.
      * Micronaut will automatically inject the implementations of the ports.
@@ -23,9 +22,8 @@ class ApplicationConfig {
     fun placeOrderService(
         repository: OrderRepository,
         stockChecker: StockAvailabilityChecker,
-        eventPublisher: DomainEventPublisher
+        eventPublisher: DomainEventPublisher,
     ): PlaceOrderService {
         return PlaceOrderService(repository, stockChecker, eventPublisher)
     }
 }
-

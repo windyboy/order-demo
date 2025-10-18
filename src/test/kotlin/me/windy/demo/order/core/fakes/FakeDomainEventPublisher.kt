@@ -8,11 +8,10 @@ import me.windy.demo.order.core.port.outgoing.DomainEventPublisher
  * Tracks published events for verification.
  */
 class FakeDomainEventPublisher(
-    private val shouldFail: Boolean = false
+    private val shouldFail: Boolean = false,
 ) : DomainEventPublisher {
-    
     val publishedEvents = mutableListOf<DomainEvent>()
-    
+
     override fun publish(event: DomainEvent): Result<Unit> {
         return if (shouldFail) {
             Result.failure(RuntimeException("Event publishing failed"))
@@ -22,4 +21,3 @@ class FakeDomainEventPublisher(
         }
     }
 }
-

@@ -9,32 +9,34 @@ enum class OrderStatus {
      * Order has been created but not yet confirmed/paid.
      */
     NEW,
-    
+
     /**
      * Order has been confirmed and payment received.
      */
     CONFIRMED,
-    
+
     /**
      * Order is being prepared/processed.
      */
     PROCESSING,
-    
+
     /**
      * Order has been shipped/dispatched.
      */
     SHIPPED,
-    
+
     /**
      * Order has been delivered to customer.
      */
     DELIVERED,
-    
+
     /**
      * Order has been cancelled.
      */
-    CANCELLED;
-    
+    CANCELLED,
+
+    ;
+
     /**
      * Validates if transition to target status is allowed.
      */
@@ -49,4 +51,3 @@ enum class OrderStatus {
         }
     }
 }
-

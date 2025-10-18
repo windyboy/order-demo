@@ -14,7 +14,7 @@ interface DomainEventPublisher {
      * @return Result indicating success or failure
      */
     fun publish(event: DomainEvent): Result<Unit>
-    
+
     /**
      * Publishes multiple domain events.
      * @param events The domain events to publish
@@ -28,4 +28,3 @@ interface DomainEventPublisher {
         }
     }
 }
-

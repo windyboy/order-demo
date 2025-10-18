@@ -10,11 +10,10 @@ import me.windy.demo.order.core.port.outgoing.OrderRepository
  * Can be configured to simulate save failures.
  */
 class FakeOrderRepository(
-    private val shouldFailSave: Boolean = false
+    private val shouldFailSave: Boolean = false,
 ) : OrderRepository {
-    
     val savedOrders = mutableListOf<Order>()
-    
+
     override fun save(order: Order): Result<OrderId> {
         return if (shouldFailSave) {
             Result.failure(RuntimeException("Repository save failed"))
@@ -23,7 +22,7 @@ class FakeOrderRepository(
             Result.success(order.id)
         }
     }
-    
+
     override fun findById(id: OrderId): Result<Order> {
         val order = savedOrders.find { it.id == id }
         return if (order != null) {
@@ -32,13 +31,12 @@ class FakeOrderRepository(
             Result.failure(NoSuchElementException("Order not found: ${id.value}"))
         }
     }
-    
+
     override fun exists(id: OrderId): Boolean {
         return savedOrders.any { it.id == id }
     }
-    
+
     override fun count(): Int {
         return savedOrders.size
     }
 }
-

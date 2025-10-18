@@ -12,13 +12,11 @@ data class OrderStatusChangedEvent(
     val previousStatus: OrderStatus,
     val newStatus: OrderStatus,
     override val eventId: String = java.util.UUID.randomUUID().toString(),
-    override val occurredAt: Instant = Instant.now()
+    override val occurredAt: Instant = Instant.now(),
 ) : BaseDomainEvent(eventId, occurredAt) {
-    
     override val eventType: String = "OrderStatusChanged"
-    
+
     companion object {
         const val EVENT_TYPE = "OrderStatusChanged"
     }
 }
-

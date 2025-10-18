@@ -1,4 +1,1 @@
-
-
-rootProject.name="order"
-
+rootProject.name = "order"

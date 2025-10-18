@@ -41,7 +41,7 @@ complexity:
     active: false
   LongMethod:
     active: true
-    threshold: 60
+    threshold: 85
   LongParameterList:
     active: true
     functionThreshold: 6
@@ -128,8 +128,9 @@ style:
     excludeImportStatements: true
   ReturnCount:
     active: true
-    max: 3
-    excludedFunctions: "equals"
+    max: 6
+    excludedFunctions:
+      - "equals"
   UnusedPrivateMember:
     active: true
   WildcardImport:

@@ -1,8 +1,8 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.25"
-    id("org.jetbrains.kotlin.plugin.allopen") version "1.9.25"
-    id("org.jetbrains.kotlin.plugin.jpa") version "1.9.25"
-    id("com.google.devtools.ksp") version "1.9.25-1.0.20"
+    id("org.jetbrains.kotlin.jvm") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.allopen") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.jpa") version "2.0.21"
+    id("com.google.devtools.ksp") version "2.0.21-1.0.28"
     id("io.micronaut.application") version "4.5.4"
     id("com.gradleup.shadow") version "8.3.7"
     id("io.micronaut.aot") version "4.5.4"
@@ -13,7 +13,7 @@ plugins {
 version = "0.1"
 group = "me.windy.demo"
 
-val kotlinVersion= project.properties["kotlinVersion"]
+val kotlinVersion = project.properties["kotlinVersion"]
 repositories {
     mavenCentral()
 }
@@ -35,8 +35,8 @@ dependencies {
     implementation("io.micronaut.validation:micronaut-validation")
     implementation("jakarta.annotation:jakarta.annotation-api")
     implementation("jakarta.validation:jakarta.validation-api")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
     runtimeOnly("ch.qos.logback:logback-classic")
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
     runtimeOnly("com.h2database:h2")
@@ -44,8 +44,8 @@ dependencies {
     testImplementation("io.micronaut.jsonschema:micronaut-json-schema-validation")
     testImplementation("org.apache.commons:commons-compress:1.27.1")
     testImplementation("org.testcontainers:testcontainers")
+    testImplementation("com.tngtech.archunit:archunit:1.2.1")
 }
-
 
 application {
     mainClass = "me.windy.demo.ApplicationKt"
@@ -53,7 +53,6 @@ application {
 java {
     sourceCompatibility = JavaVersion.toVersion("21")
 }
-
 
 graalvmNative.toolchainDetection = false
 
@@ -77,7 +76,6 @@ micronaut {
         replaceLogbackXml = true
     }
 }
-
 
 tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
     jdkVersion = "21"
@@ -119,5 +117,3 @@ tasks.register("qualityCheck") {
     group = "verification"
     description = "Runs all quality checks: ktlint, detekt, and tests"
 }
-
-

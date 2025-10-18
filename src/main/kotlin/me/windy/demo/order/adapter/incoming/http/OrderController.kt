@@ -6,7 +6,6 @@ import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Post
-import jakarta.validation.Valid
 import me.windy.demo.order.adapter.incoming.http.dto.ApiResponse
 import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderRequest
 import me.windy.demo.order.adapter.incoming.http.dto.PlaceOrderResponse
@@ -24,9 +23,8 @@ import org.slf4j.LoggerFactory
 @Controller("/orders")
 class OrderController(
     private val placeOrderUseCase: PlaceOrderUseCase,
-    private val mapper: OrderMapper
+    private val mapper: OrderMapper,
 ) {
-    
     private val log = LoggerFactory.getLogger(OrderController::class.java)
 
     /**
@@ -39,13 +37,15 @@ class OrderController(
      * - 500 Internal Server Error for system failures
      */
     @Post
-    fun place(@Body request: PlaceOrderRequest): HttpResponse<ApiResponse<PlaceOrderResponse>> {
-        val requestId = request.requestId ?: "unknown"
+    fun place(
+        @Body request: PlaceOrderRequest,
+    ): HttpResponse<ApiResponse<PlaceOrderResponse>> {
+        val requestId = request.requestId ?: java.util.UUID.randomUUID().toString()
         log.info("Received place order request: requestId={}, items={}", requestId, request.items.size)
-        
+
         val command = mapper.toCommand(request)
         val result = placeOrderUseCase.execute(command)
-        
+
         return result.fold(
             onSuccess = { orderId ->
                 log.info("Order placed successfully: orderId={}, requestId={}", orderId.value, requestId)
@@ -55,69 +55,86 @@ class OrderController(
             },
             onFailure = { throwable ->
                 toErrorResponse(throwable, requestId)
-            }
+            },
         )
     }
-    
+
     /**
      * Maps domain errors to HTTP responses.
      * Centralizes error response mapping logic.
      */
     private fun toErrorResponse(
         throwable: Throwable,
-        requestId: String
+        requestId: String,
     ): HttpResponse<ApiResponse<PlaceOrderResponse>> {
         return when (val error = throwable as? OrderError) {
             is OrderError.InsufficientStock -> {
-                log.warn("Failed to place order - insufficient stock: requestId={}, items={}", 
-                    requestId, error.unavailableItems)
+                log.warn(
+                    "Failed to place order - insufficient stock: requestId={}, items={}",
+                    requestId,
+                    error.unavailableItems,
+                )
                 HttpResponse.status<ApiResponse<PlaceOrderResponse>>(HttpStatus.CONFLICT)
                     .body(
                         ApiResponse.error(
                             code = error.code,
                             message = error.message,
-                            details = error.unavailableItems
-                        )
+                            details = error.unavailableItems,
+                        ),
                     )
             }
             is OrderError.InvalidOrder -> {
-                log.warn("Failed to place order - invalid request: requestId={}, error={}", 
-                    requestId, error.message)
+                log.warn(
+                    "Failed to place order - invalid request: requestId={}, error={}",
+                    requestId,
+                    error.message,
+                )
                 HttpResponse.badRequest(
                     ApiResponse.error<PlaceOrderResponse>(
                         code = error.code,
-                        message = error.message
-                    )
+                        message = error.message,
+                    ),
                 )
             }
             is OrderError.InvalidState -> {
-                log.warn("Failed to place order - invalid state: requestId={}, currentState={}, targetState={}", 
-                    requestId, error.currentState, error.targetState)
+                log.warn(
+                    "Failed to place order - invalid state: requestId={}, currentState={}, targetState={}",
+                    requestId,
+                    error.currentState,
+                    error.targetState,
+                )
                 HttpResponse.badRequest(
                     ApiResponse.error<PlaceOrderResponse>(
                         code = error.code,
-                        message = error.message
-                    )
+                        message = error.message,
+                    ),
                 )
             }
             is OrderError.DomainViolation -> {
-                log.warn("Failed to place order - domain violation: requestId={}, error={}", 
-                    requestId, error.message)
+                log.warn(
+                    "Failed to place order - domain violation: requestId={}, error={}",
+                    requestId,
+                    error.message,
+                )
                 HttpResponse.badRequest(
                     ApiResponse.error<PlaceOrderResponse>(
                         code = error.code,
-                        message = error.message
-                    )
+                        message = error.message,
+                    ),
                 )
             }
             is OrderError.OrderPlacementFailed -> {
-                log.error("Failed to place order - system error: requestId={}, error={}", 
-                    requestId, error.message, error.cause)
+                log.error(
+                    "Failed to place order - system error: requestId={}, error={}",
+                    requestId,
+                    error.message,
+                    error.cause,
+                )
                 HttpResponse.serverError(
                     ApiResponse.error<PlaceOrderResponse>(
                         code = error.code,
-                        message = error.message
-                    )
+                        message = error.message,
+                    ),
                 )
             }
             else -> {
@@ -125,8 +142,8 @@ class OrderController(
                 HttpResponse.serverError(
                     ApiResponse.error<PlaceOrderResponse>(
                         code = "INTERNAL_ERROR",
-                        message = "An unexpected error occurred"
-                    )
+                        message = "An unexpected error occurred",
+                    ),
                 )
             }
         }
@@ -138,7 +155,7 @@ class OrderController(
     @Get("/health")
     fun health(): HttpResponse<ApiResponse<Map<String, String>>> {
         return HttpResponse.ok(
-            ApiResponse.success(mapOf("status" to "healthy", "service" to "order"))
+            ApiResponse.success(mapOf("status" to "healthy", "service" to "order")),
         )
     }
 }

@@ -10,6 +10,5 @@ import java.util.UUID
  */
 data class PlaceOrderCommand(
     val items: List<OrderItem>,
-    val requestId: String = UUID.randomUUID().toString()
+    val requestId: String = UUID.randomUUID().toString(),
 )
-

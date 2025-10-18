@@ -15,11 +15,9 @@ import me.windy.demo.order.core.port.incoming.PlaceOrderUseCase
 @Singleton
 @Requires(property = "features.order.enabled", notEquals = "false", defaultValue = "true")
 class PlaceOrderHandler(
-    private val service: PlaceOrderService
+    private val service: PlaceOrderService,
 ) : PlaceOrderUseCase {
-    
     override fun execute(command: PlaceOrderCommand): Result<OrderId> {
         return service.placeOrder(command.items)
     }
 }
-

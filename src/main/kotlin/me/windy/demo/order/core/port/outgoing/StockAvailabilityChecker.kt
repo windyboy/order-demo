@@ -11,16 +11,22 @@ interface StockAvailabilityChecker {
      * @param quantity Required quantity
      * @return Result with available quantity, or error if check fails
      */
-    fun checkAvailability(sku: String, quantity: Int): Result<Boolean>
-    
+    fun checkAvailability(
+        sku: String,
+        quantity: Int,
+    ): Result<Boolean>
+
     /**
      * Reserves stock for the specified product.
      * @param sku Product identifier
      * @param quantity Required quantity
      * @return Result indicating success or failure with reason
      */
-    fun reserve(sku: String, quantity: Int): Result<Unit>
-    
+    fun reserve(
+        sku: String,
+        quantity: Int,
+    ): Result<Unit>
+
     /**
      * Checks and reserves in a single operation (convenience method).
      * Uses Result-based error handling to avoid exceptions.
@@ -28,7 +34,10 @@ interface StockAvailabilityChecker {
      * @param quantity Required quantity
      * @return Result indicating success or failure with reason
      */
-    fun checkAndReserve(sku: String, quantity: Int): Result<Unit> {
+    fun checkAndReserve(
+        sku: String,
+        quantity: Int,
+    ): Result<Unit> {
         return checkAvailability(sku, quantity).fold(
             onSuccess = { available ->
                 if (available) {
@@ -39,8 +48,7 @@ interface StockAvailabilityChecker {
             },
             onFailure = { throwable ->
                 Result.failure(throwable)
-            }
+            },
         )
     }
 }
-

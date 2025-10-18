@@ -17,43 +17,56 @@ import org.slf4j.LoggerFactory
 @Singleton
 @Requires(missingProperty = "messaging.broker.url")
 class LoggingDomainEventPublisher : DomainEventPublisher {
-    
     private val log = LoggerFactory.getLogger(LoggingDomainEventPublisher::class.java)
-    
+
     // Track published events for testing purposes
     private val publishedEvents = mutableListOf<DomainEvent>()
-    
+
     override fun publish(event: DomainEvent): Result<Unit> {
         return runCatching {
             publishedEvents.add(event)
-            
+
             when (event) {
                 is OrderPlacedEvent -> {
-                    log.info("📦 [OrderPlaced] orderId={}, total={}, items={}, eventId={}", 
-                        event.orderId.value, event.totalAmount.amount, event.itemCount, event.eventId)
+                    log.info(
+                        "📦 [OrderPlaced] orderId={}, total={}, items={}, eventId={}",
+                        event.orderId.value,
+                        event.totalAmount.amount,
+                        event.itemCount,
+                        event.eventId,
+                    )
                 }
                 is OrderStatusChangedEvent -> {
-                    log.info("🔄 [OrderStatusChanged] orderId={}, from={}, to={}, eventId={}", 
-                        event.orderId.value, event.previousStatus, event.newStatus, event.eventId)
+                    log.info(
+                        "🔄 [OrderStatusChanged] orderId={}, from={}, to={}, eventId={}",
+                        event.orderId.value,
+                        event.previousStatus,
+                        event.newStatus,
+                        event.eventId,
+                    )
                 }
                 else -> {
-                    log.info("📨 [{}] eventId={}, timestamp={}", 
-                        event.eventType, event.eventId, event.occurredAt)
+                    log.info(
+                        "📨 [{}] eventId={}, timestamp={}",
+                        event.eventType,
+                        event.eventId,
+                        event.occurredAt,
+                    )
                 }
             }
-            
+
             // In production, this would be:
             // kafkaProducer.send(ProducerRecord("domain-events", event.eventId, serializeEvent(event)))
             // or
             // rabbitTemplate.convertAndSend("domain.events", event.eventType, event)
         }
     }
-    
+
     /**
      * Gets all published events. Useful for testing.
      */
     fun getPublishedEvents(): List<DomainEvent> = publishedEvents.toList()
-    
+
     /**
      * Clears published events. Useful for testing.
      */
@@ -62,4 +75,3 @@ class LoggingDomainEventPublisher : DomainEventPublisher {
         log.debug("All published events cleared")
     }
 }
-

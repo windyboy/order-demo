@@ -1,6 +1,5 @@
 package me.windy.demo.order.core.port.incoming
 
-import me.windy.demo.order.core.domain.OrderError
 import me.windy.demo.order.core.domain.OrderId
 
 /**
@@ -16,4 +15,3 @@ interface PlaceOrderUseCase {
      */
     fun execute(command: PlaceOrderCommand): Result<OrderId>
 }
-

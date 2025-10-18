@@ -1,11 +1,6 @@
 package me.windy.demo.order.adapter.incoming.http.dto
 
 import io.micronaut.serde.annotation.Serdeable
-import jakarta.validation.Valid
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.Positive
-import jakarta.validation.constraints.PositiveOrZero
 import java.math.BigDecimal
 
 /**
@@ -15,13 +10,13 @@ import java.math.BigDecimal
 @Serdeable
 data class PlaceOrderRequest(
     val items: List<Item>,
-    val requestId: String? = null
+    val requestId: String? = null,
 ) {
     @Serdeable
     data class Item(
         val sku: String,
         val unitPrice: BigDecimal,
-        val quantity: Int
+        val quantity: Int,
     )
 }
 
@@ -30,7 +25,7 @@ data class PlaceOrderRequest(
  */
 @Serdeable
 data class PlaceOrderResponse(
-    val orderId: String
+    val orderId: String,
 )
 
 /**
@@ -38,5 +33,5 @@ data class PlaceOrderResponse(
  */
 data class ErrorResponse(
     val message: String,
-    val code: String
+    val code: String,
 )
