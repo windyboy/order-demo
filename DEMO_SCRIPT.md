@@ -205,8 +205,8 @@ import me.windy.demo.order.adapter.incoming.http.OrderController  // ❌ WRONG!
 HTTP Request 
    → OrderController (adapter)
    → PlaceOrderUseCase (port)
-   → PlaceOrderHandler (application)
-   → PlaceOrderService (orchestration)
+   → OrderPlacementHandler (application)
+   → OrderPlacementHandler (orchestration)
    → Order.create() (domain - business logic!)
    → OrderRepository (port)
    → InMemoryOrderRepository (adapter)

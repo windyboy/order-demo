@@ -12,16 +12,16 @@ flowchart TB
         InventoryService[Inventory Service]
         MQ[Message Queue]
     end
-    
+
     subgraph Adapter["🔌 Adapter Layer"]
         subgraph InboundAdapter["Inbound Adapters"]
             Controller["OrderController
-\+ place()
-\+ health()"]
++ place()
++ health()"]
             Mapper["OrderMapper
 DTO ↔ Domain"]
         end
-        
+
         subgraph OutboundAdapter["Outbound Adapters"]
             RepoImpl["InMemoryOrderRepository
 implements OrderRepository"]
@@ -31,7 +31,7 @@ implements StockAvailabilityChecker"]
 implements DomainEventPublisher"]
         end
     end
-    
+
     subgraph Core["⚡ Core Layer"]
         subgraph Port["Port Layer"]
             InPort["PlaceOrderUseCase
@@ -43,19 +43,17 @@ Outbound Port"]
             OutPort3["DomainEventPublisher
 Outbound Port"]
         end
-        
+
         subgraph Application["Application Layer"]
-            Handler["PlaceOrderHandler
-Implements PlaceOrderUseCase"]
-            Service["PlaceOrderService
-@Transactional
-Business Logic Orchestration"]
+            UseCase["OrderPlacementHandler
+Implements PlaceOrderUseCase
+Result Pipeline"]
         end
-        
+
         subgraph Domain["Domain Layer"]
             Order["Order Aggregate Root
-\+ status: OrderStatus
-\+ domainEvents"]
++ status: OrderStatus
++ domainEvents"]
             OrderItem[OrderItem Value Object]
             Money[Money Value Object]
             OrderStatus["OrderStatus Enum
@@ -67,16 +65,15 @@ OrderStatusChangedEvent"]
 sealed class"]
         end
     end
-    
+
     Client --> Controller
     Controller --> Mapper
     Mapper --> InPort
-    InPort -.实现.-> Handler
-    Handler --> Service
-    Service --> Order
-    Service --> OutPort1
-    Service --> OutPort2
-    Service --> OutPort3
+    InPort -.实现.-> UseCase
+    UseCase --> Order
+    UseCase --> OutPort1
+    UseCase --> OutPort2
+    UseCase --> OutPort3
     OutPort1 -.实现.-> RepoImpl
     OutPort2 -.实现.-> StockImpl
     OutPort3 -.实现.-> EventImpl
@@ -84,8 +81,8 @@ sealed class"]
     Order --> Money
     Order --> OrderStatus
     Order --> Events
-    Service --> OrderError
-    
+    UseCase --> OrderError
+
     RepoImpl --> InventoryService
     EventImpl --> MQ
 ```
@@ -129,7 +126,7 @@ sealed class"]
 | Port Interface | Responsibility | Implementation (Adapter) | Environment |
 |---|---|---|---|
 | **Inbound Ports** |
-| `PlaceOrderUseCase` | Place order use case interface | `PlaceOrderHandler` | All |
+| `PlaceOrderUseCase` | Place order use case interface | `OrderPlacementHandler` | All |
 | **Outbound Ports** |
 | `OrderRepository` | Order persistence | `InMemoryOrderRepository` | dev/test |
 |  |  | `PostgresOrderRepository` ⚡ | prod |
@@ -146,30 +143,26 @@ sealed class"]
 sequenceDiagram
     participant Client
     participant Controller
-    participant Handler
-    participant Service
+    participant UseCase as OrderPlacementHandler
     participant Domain as Order
     participant Repo as OrderRepository
     participant EventPub as DomainEventPublisher
-    
+
     Client->>Controller: POST /orders
-    Controller->>Handler: execute(command)
-    Handler->>Service: placeOrder(items)
-    
-    Service->>Service: checkStock(items)
+    Controller->>UseCase: execute(command)
+
+    UseCase->>UseCase: validate & reserve stock
     alt Stock Available
-        Service->>Domain: Order.create(items)
-        Domain-->>Service: Order + OrderPlacedEvent
-        Service->>Repo: save(order)
-        Repo-->>Service: Result<OrderId>
-        Service->>EventPub: publishAll(domainEvents)
-        EventPub-->>Service: Result<Unit>
-        Service-->>Handler: Result<OrderId>
-        Handler-->>Controller: Result<OrderId>
+        UseCase->>Domain: Order.create(items)
+        Domain-->>UseCase: Order + domain events
+        UseCase->>Repo: save(order)
+        Repo-->>UseCase: Result<OrderId>
+        UseCase->>EventPub: publishAll(events)
+        EventPub-->>UseCase: Result<Unit>
+        UseCase-->>Controller: Result<OrderId>
         Controller-->>Client: 201 Created {"success":true,"data":{"orderId":"..."}}
     else Stock Insufficient
-        Service-->>Handler: Result.failure(InsufficientStock)
-        Handler-->>Controller: Result.failure
+        UseCase-->>Controller: Result.failure(InsufficientStock)
         Controller-->>Client: 409 Conflict {"success":false,"error":{"code":"INSUFFICIENT_STOCK"}}
     end
 ```
@@ -185,7 +178,7 @@ src/test/kotlin/
 │   │   ├── OrderItemTest.kt                 ✅ Value Object Testing
 │   │   └── MoneyTest.kt                     ✅ Money Calculation Testing
 │   ├── application/
-│   │   └── PlaceOrderServiceTest.kt         ✅ Service Orchestration Testing
+│   │   └── OrderPlacementHandlerTest.kt         ✅ Use Case Orchestration Testing
 │   └── fakes/
 │       ├── FakeOrderRepository.kt           ✅ Test Doubles
 │       ├── FakeStockChecker.kt              ✅ Test Doubles
@@ -392,7 +385,7 @@ class Order {
 
 | Improvement | Description | Status |
 |-------|------|------|
-| **Unified Error Handling** | PlaceOrderService uses Result types entirely, eliminating exception propagation | ✅ Completed |
+| **Unified Error Handling** | OrderPlacementHandler uses Result types entirely, eliminating exception propagation | ✅ Completed |
 | **Idempotency Support** | PlaceOrderCommand adds requestId field | ✅ Completed |
 | **Event Cleanup Mechanism** | Use pullDomainEvents() to ensure events are published only once | ✅ Completed |
 
@@ -418,7 +411,7 @@ class Order {
 | Test Type | File | Status |
 |---------|------|------|
 | **State Machine Testing** | OrderStateMachineTest.kt | ✅ Completed |
-| **Negative Path Testing** | PlaceOrderServiceErrorPathTest.kt | ✅ Completed |
+| **Negative Path Testing** | OrderPlacementHandlerErrorPathTest.kt | ✅ Completed |
 | **Event Validation Testing** | OrderEventPublishTest.kt | ✅ Completed |
 | **HTTP Integration Testing** | OrderControllerValidationTest.kt | ✅ Completed |
 

@@ -3,30 +3,31 @@ package me.windy.demo.order.core.application
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import me.windy.demo.order.core.application.service.PlaceOrderService
+import me.windy.demo.order.core.application.usecase.OrderPlacementHandler
 import me.windy.demo.order.core.domain.Money
 import me.windy.demo.order.core.domain.OrderError
 import me.windy.demo.order.core.domain.OrderItem
 import me.windy.demo.order.core.fakes.FakeDomainEventPublisher
 import me.windy.demo.order.core.fakes.FakeOrderRepository
 import me.windy.demo.order.core.fakes.FakeStockAvailabilityChecker
+import me.windy.demo.order.core.port.incoming.PlaceOrderCommand
 
 /**
- * Tests for PlaceOrderService error paths.
+ * Tests for [OrderPlacementHandler] error paths.
  * Verifies proper error handling for various failure scenarios.
  */
-class PlaceOrderServiceErrorPathTest : DescribeSpec({
+class OrderPlacementHandlerErrorPathTest : DescribeSpec({
 
-    describe("PlaceOrderService error handling") {
+    describe("OrderPlacementHandler error handling") {
 
         context("when items list is empty") {
             it("should return InvalidOrder error") {
                 val repository = FakeOrderRepository()
                 val stockChecker = FakeStockAvailabilityChecker()
                 val eventPublisher = FakeDomainEventPublisher()
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
-                val result = service.placeOrder(emptyList())
+                val result = handler.execute(PlaceOrderCommand(emptyList()))
 
                 result.isFailure shouldBe true
                 val error = result.exceptionOrNull()
@@ -40,7 +41,7 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                 val repository = FakeOrderRepository()
                 val stockChecker = FakeStockAvailabilityChecker(availableStock = false)
                 val eventPublisher = FakeDomainEventPublisher()
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
                 val items =
                     listOf(
@@ -48,7 +49,7 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                         OrderItem.of("SKU-002", Money.of("20.00"), 3),
                     )
 
-                val result = service.placeOrder(items)
+                val result = handler.execute(PlaceOrderCommand(items))
 
                 result.isFailure shouldBe true
                 val error = result.exceptionOrNull() as OrderError.InsufficientStock
@@ -71,7 +72,7 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                             ),
                     )
                 val eventPublisher = FakeDomainEventPublisher()
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
                 val items =
                     listOf(
@@ -80,7 +81,7 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                         OrderItem.of("SKU-003", Money.of("30.00"), 1),
                     )
 
-                val result = service.placeOrder(items)
+                val result = handler.execute(PlaceOrderCommand(items))
 
                 result.isFailure shouldBe true
                 val error = result.exceptionOrNull() as OrderError.InsufficientStock
@@ -93,11 +94,11 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                 val repository = FakeOrderRepository(shouldFailSave = true)
                 val stockChecker = FakeStockAvailabilityChecker()
                 val eventPublisher = FakeDomainEventPublisher()
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
                 val items = listOf(OrderItem.of("SKU-001", Money.of("10.00"), 1))
 
-                val result = service.placeOrder(items)
+                val result = handler.execute(PlaceOrderCommand(items))
 
                 result.isFailure shouldBe true
                 val error = result.exceptionOrNull()
@@ -111,11 +112,11 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                 val repository = FakeOrderRepository()
                 val stockChecker = FakeStockAvailabilityChecker()
                 val eventPublisher = FakeDomainEventPublisher(shouldFail = true)
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
                 val items = listOf(OrderItem.of("SKU-001", Money.of("10.00"), 1))
 
-                val result = service.placeOrder(items)
+                val result = handler.execute(PlaceOrderCommand(items))
 
                 result.isFailure shouldBe true
                 val error = result.exceptionOrNull()
@@ -129,11 +130,11 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                 val repository = FakeOrderRepository()
                 val stockChecker = FakeStockAvailabilityChecker()
                 val eventPublisher = FakeDomainEventPublisher()
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
                 val items = listOf(OrderItem.of("SKU-001", Money.of("10.00"), 2))
 
-                val result = service.placeOrder(items)
+                val result = handler.execute(PlaceOrderCommand(items))
 
                 result.isSuccess shouldBe true
                 // Events should have been pulled and published
@@ -146,12 +147,12 @@ class PlaceOrderServiceErrorPathTest : DescribeSpec({
                 val repository = FakeOrderRepository()
                 val stockChecker = FakeStockAvailabilityChecker()
                 val eventPublisher = FakeDomainEventPublisher()
-                val service = PlaceOrderService(repository, stockChecker, eventPublisher)
+                val handler = OrderPlacementHandler(repository, stockChecker, eventPublisher)
 
                 val result =
                     runCatching {
                         val items = listOf(OrderItem.of("SKU-001", Money.of("-10.00"), 1))
-                        service.placeOrder(items)
+                        handler.execute(PlaceOrderCommand(items))
                     }
 
                 // Money value class will reject negative amounts in init block
