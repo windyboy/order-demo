@@ -1,64 +1,70 @@
 # Order Service - Hexagonal Architecture Demo
 
-> **v2.0 - Production-Ready**
+> **Production-Ready Reference Implementation**
 
-This is a complete implementation of an order service using **Hexagonal Architecture**, built with **Micronaut 4.9.4**, **Kotlin**, and **Domain-Driven Design (DDD)** principles.
+A complete implementation of an order service using **Hexagonal Architecture (Ports & Adapters)**, built with **Micronaut 4.9.4**, **Kotlin**, and **Domain-Driven Design** principles.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/coverage-90%25-green)
 ![Architecture](https://img.shields.io/badge/architecture-hexagonal-blue)
-![Architecture Grade](https://img.shields.io/badge/architecture-10/10-gold)
 ![Tests](https://img.shields.io/badge/tests-54%20passing-success)
 ![Adapters](https://img.shields.io/badge/adapters-HTTP%20%2B%20CLI-blue)
 
 ## 🎯 What Makes This Special
 
-This project demonstrates **production-quality** hexagonal architecture with:
+This project demonstrates **production-quality** hexagonal architecture:
 
 - ✅ **Adapter Swapping** - HTTP + CLI adapters using the same use case (proves the pattern works!)
 - ✅ **Architecture Tests** - 6 ArchUnit tests enforce hexagonal boundaries automatically
 - ✅ **Educational Code** - Self-teaching comments explaining DDD patterns in context
 - ✅ **Rich Domain Model** - OrderStatus state machine, domain events, value objects
-- ✅ **Result Type Errors** - Functional error handling without exceptions
+- ✅ **Result-Based Errors** - Functional error handling without exception propagation
 - ✅ **Comprehensive Testing** - 54 tests covering all layers (domain, app, adapter, E2E, architecture)
 - ✅ **Complete Documentation** - Architecture guide, comparison doc, demo script
 
+---
+
 ## 📚 Documentation
 
-📐 **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete architecture design and patterns  
-⚖️ **[docs/ARCHITECTURE_COMPARISON.md](./docs/ARCHITECTURE_COMPARISON.md)** - Why hexagonal architecture wins  
-🎤 **[DEMO_SCRIPT.md](./DEMO_SCRIPT.md)** - 15-minute live presentation guide  
-🚨 **[ErrorMapping.md](./ErrorMapping.md)** - HTTP error handling reference
+| Document | Description |
+|----------|-------------|
+| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Complete architecture design and patterns |
+| **[ARCHITECTURE_COMPARISON.md](./docs/ARCHITECTURE_COMPARISON.md)** | Layered vs Hexagonal architecture comparison |
+| **[DEMO_SCRIPT.md](./DEMO_SCRIPT.md)** | 15-minute live presentation guide |
+| **[ErrorMapping.md](./ErrorMapping.md)** | HTTP error handling reference |
+| **[CHANGELOG.md](./CHANGELOG.md)** | Version history and improvements |
+
+---
 
 ## 🎓 How It Works - Request Flow Walkthrough
 
-Want to understand hexagonal architecture in action? Follow a complete request through the system:
-
-### When you POST to `/orders`:
+### Complete Request Path
 
 ```
 HTTP Request → Adapter → Port → Application → Domain → Port → Adapter → HTTP Response
 ```
 
-#### Step 1: HTTP Adapter Layer
+#### Step 1: HTTP Adapter (Inbound)
 **File**: `OrderController.kt`
+
 ```kotlin
 @Post
 fun place(@Body request: PlaceOrderRequest) {
     // 1. Validate DTO (Bean Validation)
-    // 2. Map DTO → Domain (OrderMapper)
+    // 2. Map DTO → Domain Command
     val command = mapper.toCommand(request)
     
-    // 3. Call USE CASE interface (inbound port)
+    // 3. Call use case interface (inbound port)
     val result = placeOrderUseCase.execute(command)
 }
 ```
-**Key Point**: Controller depends on `PlaceOrderUseCase` interface, not concrete implementation!
+**Key**: Controller depends on `PlaceOrderUseCase` **interface**, not implementation!
 
-#### Step 2: Application Layer
+#### Step 2: Application Layer (Use Case)
 **File**: `OrderPlacementHandler.kt`
+
 ```kotlin
-// Application use case drives the workflow
+// Use case orchestrates the workflow
 class OrderPlacementHandler(
     private val repository: OrderRepository,
     private val stockChecker: StockAvailabilityChecker,
@@ -72,40 +78,46 @@ class OrderPlacementHandler(
             .flatMap(::persistAndPublish)
 }
 ```
-**Key Point**: The workflow is expressed as a Result pipeline on ports; there is no extra delegation layer.
+**Key**: Workflow expressed as a Result pipeline - orchestrates, doesn't implement business logic.
 
-#### Step 3: Domain Layer
+#### Step 3: Domain Layer (Business Logic)
 **File**: `Order.kt`
+
 ```kotlin
 companion object {
-    fun create(items: List<OrderItem>): Order {
+    fun create(items: List<OrderItem>): Result<Order> {
         // Business invariant validation
-        require(items.isNotEmpty()) { "Order must have items" }
+        if (items.isEmpty()) {
+            return Result.failure(InvalidOrderData("Order must have items"))
+        }
         
         val order = Order(OrderId.generate(), items, OrderStatus.NEW)
         
         // Raise domain event
         order._domainEvents.add(OrderPlacedEvent(...))
         
-        return order
+        return Result.success(order)
     }
 }
 ```
-**Key Point**: Business rules live HERE, not in services. Zero framework dependencies!
+**Key**: Business rules live HERE, not in services. Zero framework dependencies!
 
-#### Step 4: Persistence Adapter
+#### Step 4: Persistence Adapter (Outbound)
 **File**: `InMemoryOrderRepository.kt`
+
 ```kotlin
 class InMemoryOrderRepository : OrderRepository {  // Implements the port!
+    private val store = ConcurrentHashMap<String, Order>()
+    
     override fun save(order: Order): Result<OrderId> {
         store[order.id.value] = order
         return Result.success(order.id)
     }
 }
 ```
-**Key Point**: Adapter implements the outbound port. Easy to swap with PostgreSQL!
+**Key**: Adapter implements the outbound port. Easy to swap with PostgreSQL!
 
-#### Step 5: Response Path
+#### Step 5: Response Mapping
 ```kotlin
 // In Controller:
 result.fold(
@@ -117,16 +129,41 @@ result.fold(
 )
 ```
 
-### 🔍 Dependency Direction
+---
+
+## 🏗️ Architecture Diagram
+
+```mermaid
+flowchart TB
+    Client[HTTP Client]
+    Controller[OrderController]
+    UseCase[OrderPlacementHandler]
+    Domain[Order Aggregate]
+    Repo[OrderRepository Port]
+    RepoImpl[InMemoryOrderRepository]
+    
+    Client -->|POST /orders| Controller
+    Controller -->|execute()| UseCase
+    UseCase -->|create()| Domain
+    UseCase -->|save()| Repo
+    Repo -.implements.-> RepoImpl
+    
+    style Domain fill:#f9f,stroke:#333,stroke-width:4px
+    style UseCase fill:#bbf,stroke:#333,stroke-width:2px
+    style Controller fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+### Dependency Direction
+
 ```
           ┌─────────────┐
-          │   Domain    │  ← Core business logic
+          │   Domain    │  ← Pure business logic
           │   (Order)   │
           └─────────────┘
                  ↑
                  │ depends on
           ┌─────────────┐
-          │    Ports    │  ← Interfaces
+          │    Ports    │  ← Interfaces only
           │(Repository) │
           └─────────────┘
                  ↑
@@ -136,220 +173,114 @@ result.fold(
           │ (InMemory)  │
           └─────────────┘
 ```
-**All arrows point INWARD** - that's hexagonal architecture!
+
+**All arrows point INWARD** - that's the hexagonal architecture principle!
 
 ---
 
-## Architecture Overview
-
-This project strictly follows Hexagonal Architecture principles and implements:
-- ✅ **Dependency Inversion**: Core domain does not depend on external frameworks
-- ✅ **Ports and Adapters**: Clear inbound/outbound interfaces
-- ✅ **Domain Encapsulation**: Strong invariant protection in domain models + state machine
-- ✅ **Business Semantics**: Business-oriented interface naming
-- ✅ **Structured Error Handling**: Using `Result<T>` type instead of exception flow
-- ✅ **Domain Events**: Foundation for event-driven architecture
-- ✅ **Transaction Consistency**: Application layer transaction boundaries
-- ✅ **Testability**: Independent testing of each layer with Fake implementations
-
----
-
-## Project Structure
+## 📦 Project Structure
 
 ```
-order/
-├── core/                           # Core layer (no external dependencies)
-│   ├── domain/                     # Domain models
-│   │   ├── Order.kt               # Order aggregate root
-│   │   ├── OrderItem.kt           # Order item value object
-│   │   ├── OrderId.kt             # Order ID value object
-│   │   └── Money.kt               # Money value object
-│   ├── application/                # Application layer
-│   │   ├── usecase/
-│   │   │   └── OrderPlacementHandler.kt    # Use case orchestration pipeline
-│   │   └── config/
-│   │       └── ApplicationConfig.kt     # Application configuration
-│   └── port/                       # Port interfaces
-│       ├── incoming/               # Inbound ports (use case interfaces)
+src/main/kotlin/me/windy/demo/order/
+├── core/                              # CORE LAYER (no external dependencies)
+│   ├── domain/                        # Domain models
+│   │   ├── model/
+│   │   │   ├── Order.kt              # Aggregate root
+│   │   │   ├── OrderItem.kt          # Value object
+│   │   │   ├── Money.kt              # Value object
+│   │   │   └── OrderStatus.kt        # State machine enum
+│   │   ├── event/
+│   │   │   └── DomainEvents.kt       # Domain events
+│   │   └── error/
+│   │       └── OrderError.kt         # Error types
+│   ├── application/                   # Application layer
+│   │   └── usecase/
+│   │       └── OrderPlacementHandler.kt  # Use case orchestration
+│   └── port/                          # Port interfaces
+│       ├── incoming/                  # Inbound ports
 │       │   ├── PlaceOrderUseCase.kt
 │       │   └── PlaceOrderCommand.kt
-│       └── outgoing/               # Outbound ports (external dependencies)
+│       └── outgoing/                  # Outbound ports
 │           ├── OrderRepository.kt
 │           ├── StockAvailabilityChecker.kt
 │           └── DomainEventPublisher.kt
-├── adapter/                        # Adapter layer
-│   ├── incoming/http/              # HTTP inbound adapter
-│   │   ├── OrderController.kt
-│   │   ├── dto/
-│   │   │   └── PlaceOrderDtos.kt
-│   │   └── mapper/
-│   │       └── OrderMapper.kt     # HTTP mapper
-│   ├── outgoing/
-│   │   ├── persistence/            # Persistence adapter
-│   │   │   └── repo/
-│   │   │       └── InMemoryOrderRepository.kt
-│   │   ├── inventory/              # Inventory check adapter
-│   │   │   └── DummyStockAvailabilityChecker.kt
-│   │   └── messaging/              # Message publishing adapter
-│   │       └── LoggingDomainEventPublisher.kt
-└── Application.kt                  # Micronaut application entry point
+│
+├── adapter/                           # ADAPTER LAYER
+│   ├── incoming/
+│   │   ├── http/                      # HTTP adapter
+│   │   │   ├── OrderController.kt
+│   │   │   ├── dto/
+│   │   │   │   └── PlaceOrderDtos.kt
+│   │   │   └── mapper/
+│   │   │       └── OrderMapper.kt
+│   │   └── cli/                       # CLI adapter
+│   │       └── OrderCLI.kt
+│   └── outgoing/
+│       ├── persistence/               # Persistence adapters
+│       │   └── InMemoryOrderRepository.kt
+│       ├── stock/                     # Stock checking adapters
+│       │   └── DummyStockChecker.kt
+│       └── event/                     # Event publishing adapters
+│           └── LoggingEventPublisher.kt
+│
+└── Application.kt                     # Micronaut entry point
 ```
 
 ---
 
-## Architecture Layer Details
+## 🧪 Testing Strategy
 
-### 1️⃣ Domain Layer (Core Domain)
+### Test Pyramid
 
-**Responsibility**: Encapsulate business rules and invariants
-
-**Key Features**:
-- Using **private constructor + factory method** to protect object creation
-- **Strong invariant validation**: Prevent illegal states
-- Pure Kotlin code with **no framework dependencies**
-
-**示例**：
-```kotlin
-// Order 聚合根
-class Order private constructor(val id: OrderId, val items: List<OrderItem>) {
-    init {
-        require(items.isNotEmpty()) { "Order must contain at least one item" }
-    }
-    
-    fun total(): Money = items.fold(Money.ZERO) { acc, item -> acc + item.subtotal() }
-    
-    companion object {
-        fun create(items: List<OrderItem>): Order = Order(OrderId.generate(), items)
-    }
-}
+```
+        /\
+       /E2E\        ← Full HTTP flow
+      /------\
+     /  App  \      ← Use case with fakes
+    /----------\
+   /   Domain   \   ← Pure business logic
+  /--------------\
 ```
 
----
-
-### 2️⃣ Port Layer (Port Interfaces)
-
-**Responsibility**: Define interaction contracts between core domain and external systems
-
-#### Inbound Ports (In Ports)
-Define application use case interfaces:
+### 1. Domain Testing (Pure Logic)
 ```kotlin
-interface PlaceOrderUseCase {
-    fun execute(command: PlaceOrderCommand): Result<OrderId>
-}
-```
-
-#### Outbound Ports (Out Ports)
-Define external dependency interfaces (with business semantic naming):
-```kotlin
-interface StockAvailabilityChecker {  // 而非 InventoryGateway
-    fun checkAndReserve(sku: String, quantity: Int): Boolean
-}
-
-interface DomainEventPublisher {      // 业务语义化命名
-    fun publishAll(events: List<DomainEvent>): Result<Unit>
-}
-```
-
----
-
-### 3️⃣ Application Layer (Application Services)
-
-**Responsibility**: Orchestrate business processes by coordinating domain objects and outbound ports.
-
-**Use Case Implementation**: Implements the inbound port as a workflow pipeline.
-```kotlin
-@Singleton
-class OrderPlacementHandler(
-    private val repository: OrderRepository,
-    private val stockChecker: StockAvailabilityChecker,
-    private val eventPublisher: DomainEventPublisher,
-) : PlaceOrderUseCase {
-
-    override fun execute(command: PlaceOrderCommand): Result<OrderId> =
-        validate(command)
-            .flatMap(::reserveStock)
-            .flatMap(::createAggregate)
-            .flatMap(::persistAndPublish)
-}
-```
-
-**Workflow Steps**
-1. Validate command (ensure at least one item)
-2. Reserve stock via outbound port
-3. Create aggregate (domain invariants + domain events)
-4. Persist via repository port
-5. Publish raised domain events
-
-**Key Point**: The use case itself documents the orchestration—no extra delegation layer.
-
-
-### 4️⃣ Adapter Layer (Adapters)
-
-**Responsibility**: Connect external technologies with the core domain
-
-#### HTTP Adapter (Inbound)
-```kotlin
-@Controller("/orders")
-class OrderController(
-    private val placeOrderUseCase: PlaceOrderUseCase,
-    private val mapper: OrderMapper
-) {
-    @Post
-    fun place(@Body request: PlaceOrderRequest): HttpResponse<*> {
-        val command = mapper.toCommand(request)
-        val result = placeOrderUseCase.execute(command)
-        return result.fold(
-            onSuccess = { HttpResponse.created(mapper.toResponse(it)) },
-            onFailure = { /* 错误处理 */ }
-        )
-    }
-}
-```
-
-#### Persistence Adapter (Outbound)
-```kotlin
-@Singleton
-class InMemoryOrderRepository : OrderRepository {
-    private val store = ConcurrentHashMap<String, Order>()
-    override fun save(order: Order): Order { /* ... */ }
-}
-```
-
----
-
-## Testing Strategy
-
-The project provides **three-layer testing**:
-
-### 1️⃣ Domain Testing (Pure Logic)
-```kotlin
-class OrderDomainTest : StringSpec({
-    "Order should not allow empty items" {
+class OrderTest : StringSpec({
+    "should not allow empty items" {
         shouldThrow<IllegalArgumentException> {
             Order.create(emptyList())
         }
     }
-})
-```
-
-### 2️⃣ Application Testing (Using Fakes)
-```kotlin
-class OrderPlacementHandlerTest : StringSpec({
-    "should place order successfully when stock is available" {
-        val repository = FakeOrderRepository()
-        val stockChecker = FakeStockAvailabilityChecker(available = true)
-        // ...
+    
+    "should calculate total correctly" {
+        val order = Order.create(listOf(
+            OrderItem.of("SKU-1", Money.of(10.0), 2)
+        ))
+        order.total() shouldBe Money.of(20.0)
     }
 })
 ```
 
-### 3️⃣ E2E Testing (Complete Flow)
+### 2. Application Testing (With Fakes)
+```kotlin
+class OrderPlacementHandlerTest : StringSpec({
+    "should place order when stock available" {
+        val repository = FakeOrderRepository()
+        val stockChecker = FakeStockChecker(available = true)
+        val handler = OrderPlacementHandler(repository, stockChecker, ...)
+        
+        val result = handler.execute(validCommand)
+        result.isSuccess shouldBe true
+    }
+})
+```
+
+### 3. E2E Testing (Full Flow)
 ```kotlin
 @MicronautTest
-class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
-    "should place order via HTTP endpoint" {
+class OrderE2ETest(@Client("/") val client: HttpClient) : StringSpec({
+    "should place order via HTTP" {
         val response = client.toBlocking().exchange(
-            HttpRequest.POST("/orders", request),
+            HttpRequest.POST("/orders", validRequest),
             PlaceOrderResponse::class.java
         )
         response.status shouldBe HttpStatus.CREATED
@@ -357,12 +288,23 @@ class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
 })
 ```
 
+### 4. Architecture Testing
+```kotlin
+@AnalyzeClasses(packages = ["me.windy.demo.order"])
+class HexagonalArchitectureTest {
+    @ArchTest
+    val domainShouldNotDependOnAdapters = 
+        noClasses().that().resideInAPackage("..core.domain..")
+            .should().dependOnClassesThat().resideInAPackage("..adapter..")
+}
+```
+
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
-- JDK 21+
+- JDK 17 or 21
 - Gradle 8.5+
 
 ### Build and Run Tests
@@ -375,9 +317,12 @@ class OrderE2ETest(@Client("/") private val client: HttpClient) : StringSpec({
 ./gradlew run
 ```
 
-### Test API
+Service starts at `http://localhost:8080`
+
+### Test API Endpoints
+
+#### Place an Order
 ```bash
-# Place Order
 curl -X POST http://localhost:8080/orders \
   -H "Content-Type: application/json" \
   -d '{
@@ -386,117 +331,189 @@ curl -X POST http://localhost:8080/orders \
       {"sku": "BANANA-001", "unitPrice": 3.0, "quantity": 3}
     ]
   }'
+```
 
-# Health Check
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "orderId": "ORD-550e8400-e29b-41d4-a716-446655440000"
+  },
+  "error": null
+}
+```
+
+#### Health Check
+```bash
 curl http://localhost:8080/orders/health
 ```
 
----
+#### Error Response Example
+```bash
+curl -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -d '{"items": []}'
+```
 
-## Architecture Benefits Comparison
-
-| Dimension           | Before     | After        |
-|--------------|---------|------------|
-| Dependency Direction         | Unclear      | **Unidirectional Inward**   |
-| Domain Encapsulation    | Weak (data classes) | **Strong Invariant Protection** |
-| Port Naming      | Technical     | **Business Semantic**  |
-| Adapter Responsibility   | Mixed      | **Single Responsibility**   |
-| Error Handling         | Exception Flow     | **Result Type** |
-| Test Coverage         | Partial      | **Full Layer Coverage**   |
-| Extensibility         | Medium       | **High**      |
-| Framework Independence        | Low       | **High**      |
-
----
-
-## Core Design Principles
-
-1. **Dependency Rule**: Outer layers depend on inner layers, inner layers are unaware of outer layers
-2. **Interface Segregation**: Port interfaces are small and focused, business semantic oriented
-3. **Domain Purity**: Domain layer has zero framework dependencies, 100% testable
-4. **Explicit Errors**: Using `Result<T>` instead of exceptions
-5. **Invariant Protection**: Private constructors + factory methods
-6. **Test First**: Provide Fake implementations, support independent testing of each layer
-
----
-
-## Extension Examples
-
-### Adding New Use Cases (Example: Cancel Order)
-
-1. **Define Port** (`core/port/incoming/`)
-   ```kotlin
-   interface CancelOrderUseCase {
-       fun execute(command: CancelOrderCommand): Result<Unit>
-   }
-   ```
-
-2. **Implement Handler** (`core/application/handler/`)
-   ```kotlin
-   @Singleton
-   class CancelOrderHandler(...) : CancelOrderUseCase
-   ```
-
-3. **Add Adapter** (`adapter/incoming/http/`)
-   ```kotlin
-   @Delete("/{orderId}")
-   fun cancel(@PathVariable orderId: String): HttpResponse<*>
-   ```
-
-### Replacing Implementation (Example: Using PostgreSQL)
-
-Simply create a new adapter implementing the `OrderRepository` interface:
-```kotlin
-@Singleton
-@Replaces(InMemoryOrderRepository::class)
-class PostgresOrderRepository : OrderRepository {
-    // 使用 R2DBC/JPA 实现
+**Response** (400 Bad Request):
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_ORDER_DATA",
+    "message": "Order must have at least one item"
+  }
 }
 ```
-**Core layer code requires no modification!**
 
 ---
 
-## 📚 参考资料
+## 🎯 Core Design Principles
+
+1. **Dependency Rule**: Outer layers depend on inner layers; inner layers are unaware of outer layers
+2. **Port Segregation**: Interfaces are small, focused, and business-semantic
+3. **Domain Purity**: Domain layer has zero framework dependencies, 100% testable
+4. **Explicit Errors**: Using `Result<T>` instead of exception propagation
+5. **Invariant Protection**: Private constructors + factory methods ensure valid state
+6. **Test Independence**: Fake implementations enable isolated layer testing
+
+---
+
+## 🔄 Extension Examples
+
+### Adding a New Use Case (Cancel Order)
+
+**1. Define Inbound Port** (`core/port/incoming/`)
+```kotlin
+interface CancelOrderUseCase {
+    fun execute(command: CancelOrderCommand): Result<Unit>
+}
+```
+
+**2. Implement Handler** (`core/application/usecase/`)
+```kotlin
+@Singleton
+class CancelOrderHandler(
+    private val repository: OrderRepository,
+    private val eventPublisher: DomainEventPublisher
+) : CancelOrderUseCase {
+    override fun execute(command: CancelOrderCommand): Result<Unit> =
+        repository.findById(command.orderId)
+            .flatMap { it.cancel() }
+            .flatMap { repository.save(it) }
+            .onSuccess { eventPublisher.publishAll(it.pullDomainEvents()) }
+}
+```
+
+**3. Add HTTP Adapter** (`adapter/incoming/http/`)
+```kotlin
+@Delete("/{orderId}")
+fun cancel(@PathVariable orderId: String): HttpResponse<ApiResponse<Unit>> {
+    val command = CancelOrderCommand(OrderId(orderId))
+    return cancelOrderUseCase.execute(command).toHttpResponse()
+}
+```
+
+**Core layer requires no modification!**
+
+---
+
+### Replacing Implementation (PostgreSQL)
+
+Simply create a new adapter implementing `OrderRepository`:
+
+```kotlin
+@Singleton
+@Requires(env = ["prod"])
+class PostgresOrderRepository(
+    private val dataSource: DataSource
+) : OrderRepository {
+    
+    override fun save(order: Order): Result<OrderId> = runCatching {
+        dataSource.connection.use { conn ->
+            conn.prepareStatement("""
+                INSERT INTO orders (id, total, status) 
+                VALUES (?, ?, ?)
+            """).apply {
+                setString(1, order.id.value)
+                setBigDecimal(2, order.total().amount)
+                setString(3, order.status.name)
+            }.executeUpdate()
+            order.id
+        }
+    }.fold(
+        onSuccess = { Result.success(it) },
+        onFailure = { Result.failure(OrderPlacementFailed("Database error: ${it.message}", it)) }
+    )
+}
+```
+
+**No changes needed in core or application layers!**
+
+---
+
+## 📊 Architecture Benefits
+
+| Dimension | Traditional Layered | This Project (Hexagonal) |
+|-----------|---------------------|--------------------------|
+| **Dependency Direction** | Downward (to infrastructure) | **Inward (to domain)** |
+| **Domain Encapsulation** | Weak (anemic models) | **Strong (invariant protection)** |
+| **Interface Naming** | Technical (Gateway, Service) | **Business-semantic (Checker, Publisher)** |
+| **Error Handling** | Exception throwing | **Result type** |
+| **Testability** | Requires mocking | **Fake implementations** |
+| **Adapter Swapping** | Difficult | **Easy (just implement port)** |
+| **Framework Independence** | Low | **High (domain has zero deps)** |
+
+---
+
+## 🛠️ Technology Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Micronaut | 4.9.4 | Web framework |
+| Kotlin | 2.1.0 | Programming language |
+| Kotest | 5.9.1 | Testing framework |
+| ArchUnit | 1.3.0 | Architecture testing |
+| Gradle | 8.5 | Build tool |
+| SLF4J/Logback | 1.7.x | Logging |
+
+---
+
+## ❓ FAQ
+
+**Q: Why use Result instead of exceptions?**  
+A: `Result` makes error handling explicit and compiler-enforced, preventing missed error cases.
+
+**Q: Why are domain constructors private?**  
+A: Enforce creation through factory methods to ensure all instances pass validation, preventing invalid state.
+
+**Q: How do I add database support?**  
+A: Simply implement the `OrderRepository` interface. See `InMemoryOrderRepository` as a reference. No core code changes needed!
+
+**Q: What's the difference from traditional layered architecture?**  
+A: See [ARCHITECTURE_COMPARISON.md](./docs/ARCHITECTURE_COMPARISON.md) for detailed comparison.
+
+**Q: How do I check test coverage?**  
+A: Run `./gradlew test jacocoTestReport` and view report in `build/reports/jacoco/test/html/index.html`
+
+---
+
+## 📚 References
 
 - [Hexagonal Architecture (Alistair Cockburn)](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Clean Architecture (Robert C. Martin)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Domain-Driven Design](https://www.domainlanguage.com/ddd/)
+- [Domain-Driven Design (Eric Evans)](https://www.domainlanguage.com/ddd/)
 - [Micronaut Documentation](https://docs.micronaut.io/)
+- [Kotlin Result Type](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-result/)
 
 ---
 
-## Technology Stack
-
-| Technology           | Version       | Purpose        |
-|--------------|----------|-----------|
-| Micronaut    | 4.9.4    | Web Framework    |
-| Kotlin       | 2.1.0    | Programming Language      |
-| Kotest       | 5.9.1    | Testing Framework      |
-| Gradle       | 8.5      | Build Tool      |
-| SLF4J/Logback | 1.7.x    | Logging        |
-
----
-
-## 📄 许可证
+## 📄 License
 
 MIT License
 
 ---
 
-## FAQ
-
-**Q: Why use Result instead of throwing exceptions directly?**  
-A: `Result` makes error handling explicit, compiler enforced, avoiding missed exception handling.
-
-**Q: Why are Domain layer constructors private?**  
-A: Enforce creation through factory methods, ensuring all instances are validated, preventing illegal states.
-
-**Q: How to add database support?**  
-A: Simply implement the `OrderRepository` interface without modifying core code. Refer to `InMemoryOrderRepository`.
-
-**Q: How to check test coverage?**  
-A: Run `./gradlew test jacocoTestReport` to view coverage report.
-
----
-
-**The project has been refactored and implements production-level hexagonal architecture standards!**
+**This is a production-ready reference implementation showcasing hexagonal architecture best practices!**

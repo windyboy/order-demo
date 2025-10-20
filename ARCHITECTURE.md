@@ -1,9 +1,23 @@
-# Hexagonal Architecture Design Document v2.0
+# Hexagonal Architecture Design Document
 
-> **Last Updated**: 2025-10-17  
-> **Status**: Production-Ready
+> **Last Updated**: 2025-10-20  
+> **Status**: Production-Ready Demo
 
-## System Architecture Overview
+## Overview
+
+This is a **reference implementation** demonstrating Hexagonal Architecture (Ports & Adapters) using Kotlin and Micronaut. The project showcases clean architecture principles, domain-driven design patterns, and production-ready engineering practices.
+
+**Key Features**:
+- ✅ Complete separation of concerns (Domain, Application, Adapter layers)
+- ✅ Dependency inversion via Ports & Adapters
+- ✅ Result-based error handling (no exception propagation)
+- ✅ Domain events and state machine
+- ✅ Environment-based adapter switching
+- ✅ Comprehensive test coverage
+
+---
+
+## System Architecture
 
 ```mermaid
 flowchart TB
@@ -69,14 +83,14 @@ sealed class"]
     Client --> Controller
     Controller --> Mapper
     Mapper --> InPort
-    InPort -.实现.-> UseCase
+    InPort -.implements.-> UseCase
     UseCase --> Order
     UseCase --> OutPort1
     UseCase --> OutPort2
     UseCase --> OutPort3
-    OutPort1 -.实现.-> RepoImpl
-    OutPort2 -.实现.-> StockImpl
-    OutPort3 -.实现.-> EventImpl
+    OutPort1 -.implements.-> RepoImpl
+    OutPort2 -.implements.-> StockImpl
+    OutPort3 -.implements.-> EventImpl
     Order --> OrderItem
     Order --> Money
     Order --> OrderStatus
@@ -87,46 +101,14 @@ sealed class"]
     EventImpl --> MQ
 ```
 
-## Core Improvements Summary
+---
 
-### ✅ Phase 1: Domain Hardening
-- **OrderStatus State Machine**: NEW → CONFIRMED → PROCESSING → SHIPPED → DELIVERED  
-- **Domain Events**: `OrderPlacedEvent`, `OrderStatusChangedEvent`  
-- **State Transition Validation**: Prevent illegal state transitions  
-- **Money Encapsulation**: Complete invariant validation  
-
-### ✅ Phase 2-3: Application & Port Refactor
-- **Unified Result Return**: All ports return `Result<T>`  
-- **Sealed OrderError**: Structured error model, no exception propagation  
-- **Transaction Boundary**: `@Transactional` at Service layer  
-- **Domain Event Publishing**: Unified publishing after persistence success  
-
-### ✅ Phase 4: Adapter Cleanup
-- **ApiResponse Wrapper**: Standardized API response format  
-```json
-{
-  "success": true,
-  "data": { "orderId": "..." },
-  "error": null
-}
-```
-- **Environment Profiles**: Automatic adapter switching for dev/test/prod  
-- **Mapper Testing**: Complete DTO ↔ Domain conversion testing  
-
-### ✅ Phase 5-6: Test & CI
-- **Testing Pyramid**:
-  - Unit Testing (Domain, Application)
-  - Integration Testing (Service with Fakes)
-  - E2E Testing (Full HTTP)
-- **GitHub Actions**: Automated building, testing, and code quality checking  
-- **Multi-version JDK**: Parallel testing with Java 17 & 21  
-
-## Port and Adapter Mapping Table
+## Port and Adapter Mapping
 
 | Port Interface | Responsibility | Implementation (Adapter) | Environment |
 |---|---|---|---|
 | **Inbound Ports** |
-| `PlaceOrderUseCase` | Place order use case interface | `OrderPlacementHandler` | All |
+| `PlaceOrderUseCase` | Place order use case | `OrderPlacementHandler` | All |
 | **Outbound Ports** |
 | `OrderRepository` | Order persistence | `InMemoryOrderRepository` | dev/test |
 |  |  | `PostgresOrderRepository` ⚡ | prod |
@@ -137,7 +119,9 @@ sealed class"]
 
 > ⚡ Indicates optional production-level implementation (requires additional configuration)
 
-## Order Placement Sequence Diagram
+---
+
+## Order Placement Flow
 
 ```mermaid
 sequenceDiagram
@@ -167,174 +151,384 @@ sequenceDiagram
     end
 ```
 
+---
+
+## Core Domain Model
+
+### Order Aggregate Root
+```kotlin
+class Order private constructor(
+    val id: OrderId,
+    val items: List<OrderItem>,
+    val status: OrderStatus
+) {
+    companion object {
+        fun create(items: List<OrderItem>): Order
+    }
+    
+    fun transitionTo(newStatus: OrderStatus): Result<Order>
+    fun pullDomainEvents(): List<DomainEvent>
+    fun total(): Money
+}
+```
+
+### Order State Machine
+```
+NEW → CONFIRMED → PROCESSING → SHIPPED → DELIVERED
+      ↓
+   CANCELLED (from NEW/CONFIRMED only)
+```
+
+### Value Objects
+- **Money**: Immutable, 2-decimal precision, arithmetic operations
+- **OrderItem**: Product ID, quantity, price validation
+- **OrderId/CustomerId**: Type-safe identifiers
+
+### Domain Events
+- `OrderPlacedEvent`: Triggered when order is created
+- `OrderStatusChangedEvent`: Triggered on state transitions
+
+### Error Model
+```kotlin
+sealed class OrderError(message: String, code: String, cause: Throwable?) : Throwable {
+    class InvalidOrder(message: String, cause: Throwable? = null) 
+        : OrderError(message, "INVALID_ORDER", cause)
+    
+    class InsufficientStock(message: String, val unavailableItems: List<String> = emptyList()) 
+        : OrderError(message, "INSUFFICIENT_STOCK", null)
+    
+    class InvalidState(message: String, val currentState: String, val targetState: String) 
+        : OrderError(message, "INVALID_STATE", null)
+    
+    class DomainViolation(message: String, cause: Throwable? = null) 
+        : OrderError(message, "DOMAIN_VIOLATION", cause)
+    
+    class OrderPlacementFailed(message: String, cause: Throwable? = null) 
+        : OrderError(message, "ORDER_PLACEMENT_FAILED", cause)
+}
+```
+
+---
+
 ## Test Coverage
 
 ```
 src/test/kotlin/
 ├── core/
 │   ├── domain/
-│   │   ├── OrderTest.kt                     ✅ Aggregate Root Testing
-│   │   ├── OrderStateTransitionTest.kt      ✅ State Machine Testing
-│   │   ├── OrderItemTest.kt                 ✅ Value Object Testing
-│   │   └── MoneyTest.kt                     ✅ Money Calculation Testing
+│   │   ├── OrderTest.kt                     ✅ Aggregate root behavior
+│   │   ├── OrderStateTransitionTest.kt      ✅ State machine validation
+│   │   ├── OrderItemTest.kt                 ✅ Value object validation
+│   │   └── MoneyTest.kt                     ✅ Money calculations
 │   ├── application/
-│   │   └── OrderPlacementHandlerTest.kt         ✅ Use Case Orchestration Testing
+│   │   └── OrderPlacementHandlerTest.kt     ✅ Use case orchestration
 │   └── fakes/
-│       ├── FakeOrderRepository.kt           ✅ Test Doubles
-│       ├── FakeStockChecker.kt              ✅ Test Doubles
-│       └── FakeDomainEventPublisher.kt      ✅ Test Doubles
+│       ├── FakeOrderRepository.kt           ✅ Test doubles
+│       ├── FakeStockChecker.kt              ✅ Test doubles
+│       └── FakeDomainEventPublisher.kt      ✅ Test doubles
 ├── adapter/
 │   └── incoming/http/mapper/
-│       └── OrderMapperTest.kt               ✅ Mapper Testing
+│       └── OrderMapperTest.kt               ✅ DTO ↔ Domain mapping
 └── e2e/
-    └── OrderE2ETest.kt                      ✅ End-to-End Testing
+    └── OrderE2ETest.kt                      ✅ Full HTTP flow
 ```
 
-**Coverage Goals**: Domain layer 100%, Application layer 90%+, Adapter layer 80%+
+**Coverage Goals**: Domain 100%, Application 90%+, Adapters 80%+
+
+---
+
+## Architecture Decision Records (ADR)
+
+### ADR-001: Result Type for Error Handling
+**Status**: ✅ Adopted  
+**Context**: Need explicit, type-safe error handling without exceptions  
+**Decision**: Use Kotlin `Result<T>` for all port methods and use case returns  
+**Consequences**:
+- ✅ More explicit error contracts
+- ✅ Better type safety and testability
+- ✅ Avoid exception stack overhead
+- ❌ More verbose than throwing exceptions
+
+### ADR-002: Domain Events in Aggregates
+**Status**: ✅ Adopted  
+**Context**: Need to communicate domain changes to other bounded contexts  
+**Decision**: Aggregates manage their own events, publish after persistence  
+**Consequences**:
+- ✅ Events stay consistent with state changes
+- ✅ Unified publishing after transaction success
+- ✅ Pull-based event collection prevents duplicates
+- ❌ Requires event cleanup mechanism
+
+### ADR-003: Environment-Based Adapter Switching
+**Status**: ✅ Adopted  
+**Context**: Need different implementations for dev/test/prod  
+**Decision**: Use Micronaut's `@Requires(env = [...])` for adapter selection  
+**Consequences**:
+- ✅ Zero-config switching between environments
+- ✅ Fast startup with in-memory fakes in dev/test
+- ✅ Production adapters activated automatically
+- ❌ Must ensure profile is set correctly in deployment
+
+---
 
 ## Extension Guide
 
-### Adding New Order Status
+### Adding a New Use Case
+
 ```kotlin
-// 1. Update OrderStatus Enum
+// 1. Define Inbound Port (core/port/incoming/)
+interface CancelOrderUseCase {
+    fun execute(command: CancelOrderCommand): Result<Unit>
+}
+
+// 2. Implement Handler (core/application/usecase/)
+@Singleton
+class CancelOrderHandler(
+    private val repository: OrderRepository,
+    private val eventPublisher: DomainEventPublisher
+) : CancelOrderUseCase {
+    override fun execute(command: CancelOrderCommand): Result<Unit> {
+        return repository.findById(command.orderId)
+            .mapCatching { order ->
+                order.cancel()
+            }
+            .flatMap { updatedOrder ->
+                repository.save(updatedOrder)
+                    .onSuccess { eventPublisher.publishAll(updatedOrder.pullDomainEvents()) }
+            }
+    }
+}
+
+// 3. Add Controller Endpoint (adapter/incoming/http/)
+@Delete("/{orderId}")
+fun cancel(@PathVariable orderId: String): HttpResponse<ApiResponse<Unit>> {
+    // Map and delegate to use case
+}
+```
+
+### Adding a New Order Status
+
+```kotlin
+// 1. Update OrderStatus Enum (core/domain/OrderStatus.kt)
 enum class OrderStatus {
-    NEW, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, RETURNED  // ← Added
+    NEW, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, RETURNED  // ← Add RETURNED
     
     fun canTransitionTo(target: OrderStatus): Boolean {
         return when (this) {
-            DELIVERED -> target == RETURNED  // ← Added transition rule
-            // ...
+            NEW -> target in setOf(CONFIRMED, CANCELLED)
+            CONFIRMED -> target in setOf(PROCESSING, CANCELLED)
+            PROCESSING -> target in setOf(SHIPPED, CANCELLED)
+            SHIPPED -> target in setOf(DELIVERED)
+            DELIVERED -> target == RETURNED  // ← Add new transition rule
+            CANCELLED -> false
+            RETURNED -> false
         }
     }
 }
 
-// 2. Add Domain Event
-data class OrderReturnedEvent(val orderId: OrderId, ...) : DomainEvent
+// 2. Add Domain Event (core/domain/event/)
+data class OrderReturnedEvent(
+    val orderId: OrderId,
+    val returnReason: String,
+    override val eventId: String = UUID.randomUUID().toString(),
+    override val occurredAt: Instant = Instant.now()
+) : BaseDomainEvent(eventId, occurredAt) {
+    override val eventType: String = "OrderReturned"
+}
 
-// 3. Update Order Aggregate
-fun returnOrder(): Order = transitionTo(OrderStatus.RETURNED)
+// 3. Update Order Aggregate (add method to Order class)
+fun returnOrder(reason: String): Result<Order> {
+    // transitionTo already returns Result<Order> and raises OrderStatusChangedEvent
+    return transitionTo(OrderStatus.RETURNED)
+}
 ```
 
-### Switching to a Real Database
+### Switching to Real Database
+
 ```kotlin
 // 1. Add Dependencies (build.gradle.kts)
 implementation("io.micronaut.sql:micronaut-jdbc-hikari")
 implementation("org.postgresql:postgresql")
 
-// 2. Implement Adapter
+// 2. Implement Adapter (adapter/outgoing/persistence/)
 @Singleton
 @Requires(env = ["prod"])
 class PostgresOrderRepository(
     private val dataSource: DataSource
 ) : OrderRepository {
-    override fun save(order: Order): Result<OrderId> {
-        // JPA/JDBC 实现
+    
+    override fun save(order: Order): Result<OrderId> = runCatching {
+        dataSource.connection.use { conn ->
+            val stmt = conn.prepareStatement(
+                "INSERT INTO orders (id, total_amount, status) VALUES (?, ?, ?)"
+            )
+            stmt.setString(1, order.id.value)
+            stmt.setBigDecimal(2, order.total().amount)
+            stmt.setString(3, order.status.name)
+            stmt.executeUpdate()
+            order.id
+        }
+    }.fold(
+        onSuccess = { Result.success(it) },
+        onFailure = { Result.failure(OrderPlacementFailed("Database error: ${it.message}", it)) }
+    )
+    
+    override fun findById(orderId: OrderId): Result<Order> {
+        // Query and map to domain model
     }
 }
 
-// 3. Configuration (application-prod.properties)
-datasources.default.url=jdbc:postgresql://localhost:5432/orders
+// 3. Configuration (application-prod.yml)
+datasources:
+  default:
+    url: jdbc:postgresql://localhost:5432/orders
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 ```
 
-### Adding New Use Cases
-```kotlin
-// 1. Define Port (core/port/incoming/)
-interface CancelOrderUseCase {
-    fun execute(command: CancelOrderCommand): Result<Unit>
-}
+---
 
-// 2. Implement Handler
-@Singleton
-class CancelOrderHandler(...) : CancelOrderUseCase {
-    override fun execute(command: CancelOrderCommand) = service.cancel(command)
-}
+## Design Patterns Used
 
-// 3. Add Controller Endpoint
-@Delete("/{orderId}")
-fun cancel(@PathVariable orderId: String): HttpResponse<*> {
-    // ...
-}
-```
-
-## Architecture Decision Records (ADR)
-
-### ADR-001: Using Result Instead of Exceptions for Error Handling
-**Status**: ✅ Adopted  
-**Reasons**:
-- More explicit error contract
-- Better error type safety
-- Avoid exception stack overhead
-- Easier to test
-
-### ADR-002: Domain Events Managed Within Aggregates
-**Status**: ✅ Adopted  
-**Reasons**:
-- Events are side products of domain behavior
-- Ensure consistency between events and state changes
-- Unified publishing after transaction success
-
-### ADR-003: Adapters Automatically Switched by Environment Profiles
-**Status**: ✅ Adopted  
-**Reasons**:
-- Switch implementations without code modification
-- Fast startup in development/testing environments
-- Real dependencies in production environment
-
-## Key Design Patterns
-
-| Pattern | Application Location | Purpose |
+| Pattern | Location | Purpose |
 |---|---|---|
-| **Hexagonal Architecture** | Overall Architecture | Dependency inversion, testability |
-| **Repository Pattern** | `OrderRepository` | Persistence abstraction |
-| **Factory Method** | `Order.create()` | Object creation control |
+| **Hexagonal Architecture** | Overall structure | Dependency inversion, testability |
+| **Repository Pattern** | `OrderRepository` | Abstract persistence concerns |
+| **Factory Method** | `Order.create()` | Controlled object creation |
 | **Value Object** | `Money`, `OrderItem` | Immutability, self-validation |
-| **Aggregate Root** | `Order` | Consistency boundary |
-| **Domain Event** | `OrderPlacedEvent` | Decoupling system communication |
+| **Aggregate Root** | `Order` | Consistency boundary enforcement |
+| **Domain Event** | `OrderPlacedEvent` | Decouple system communication |
 | **Strategy Pattern** | Adapter switching | Runtime behavior replacement |
 | **State Machine** | `OrderStatus` | State transition control |
+| **Result Monad** | Error handling | Functional error management |
+
+---
 
 ## Best Practices
 
-### ✅ DO (Recommended Practices)
+### ✅ DO (Recommended)
+
 ```kotlin
-// ✅ Domain object encapsulates invariants
+// ✅ Domain objects encapsulate invariants
 data class Order private constructor(...) {
-    init { require(items.isNotEmpty()) }
+    init {
+        require(items.isNotEmpty()) { "Order must have at least one item" }
+        require(totalAmount > Money.ZERO) { "Order total must be positive" }
+    }
 }
 
-// ✅ Port returns Result
+// ✅ Ports return Result for explicit error handling
 interface OrderRepository {
     fun save(order: Order): Result<OrderId>
 }
 
-// ✅ Service orchestrates business processes
+// ✅ Use case orchestrates, domain logic stays in domain
 @Transactional
-fun placeOrder(items: List<OrderItem>): Result<OrderId> {
-    // 1. Check stock
-    // 2. Create order
-    // 3. Save
-    // 4. Publish events
-}
-```
-
-### ❌ DON'T (Practices to Avoid)
-```kotlin
-// ❌ Domain object exposes mutable state
-data class Order(var items: MutableList<OrderItem>)
-
-// ❌ Port throws exceptions
-interface OrderRepository {
-    @Throws(SQLException::class)
-    fun save(order: Order): Order
+fun placeOrder(command: PlaceOrderCommand): Result<OrderId> {
+    return stockChecker.checkAndReserve(command.items)
+        .flatMap { Order.create(command.items) }
+        .flatMap { order -> repository.save(order) }
+        .onSuccess { eventPublisher.publishAll(order.pullDomainEvents()) }
 }
 
-// ❌ Domain object calls external dependencies
-class Order {
-    fun place() {
-        httpClient.post("/notify")  // ❌ Violates dependency rules
+// ✅ Value objects are immutable and self-validating
+data class Money(val amount: BigDecimal, val currency: String = "USD") {
+    init {
+        require(amount.scale() <= 2) { "Amount must have at most 2 decimal places" }
     }
 }
 ```
+
+### ❌ DON'T (Anti-patterns)
+
+```kotlin
+// ❌ Don't expose mutable state
+data class Order(var items: MutableList<OrderItem>)  // Breaks encapsulation
+
+// ❌ Don't throw exceptions from ports
+interface OrderRepository {
+    @Throws(SQLException::class)
+    fun save(order: Order): Order  // Forces exception handling
+}
+
+// ❌ Don't call external dependencies from domain
+class Order {
+    fun place() {
+        httpClient.post("/notify")  // Violates dependency rule
+    }
+}
+
+// ❌ Don't put business logic in adapters
+@Controller
+class OrderController {
+    @Post("/orders")
+    fun create(@Body dto: OrderDto): HttpResponse<*> {
+        if (dto.items.isEmpty()) return HttpResponse.badRequest()  // Logic belongs in domain!
+        // ...
+    }
+}
+```
+
+---
+
+## Running the Application
+
+### Development Mode
+```bash
+./gradlew run
+# Uses in-memory adapters, fast startup
+```
+
+### Production Mode
+```bash
+MICRONAUT_ENVIRONMENTS=prod ./gradlew run
+# Activates production adapters (requires external services)
+```
+
+### Testing
+```bash
+./gradlew test           # Run all tests
+./gradlew detekt         # Static code analysis
+./gradlew ktlintCheck    # Code style check
+```
+
+---
+
+## Project Structure
+
+```
+src/main/kotlin/me/windy/demo/order/
+├── core/
+│   ├── domain/
+│   │   ├── model/           # Aggregates, entities, value objects
+│   │   ├── event/           # Domain events
+│   │   └── error/           # Error types
+│   ├── application/
+│   │   └── usecase/         # Use case handlers
+│   └── port/
+│       ├── incoming/        # Inbound ports (use case interfaces)
+│       └── outgoing/        # Outbound ports (repository, service interfaces)
+└── adapter/
+    ├── incoming/
+    │   ├── http/            # REST controllers
+    │   └── cli/             # CLI interface
+    └── outgoing/
+        ├── persistence/     # Repository implementations
+        ├── stock/           # Stock checking adapters
+        └── event/           # Event publisher adapters
+```
+
+---
+
+## Related Documentation
+
+- [Error Handling Mapping](./ErrorMapping.md) - HTTP status codes and error type mappings
+- [Architecture Comparison](./docs/ARCHITECTURE_COMPARISON.md) - Layered vs Hexagonal comparison
+- [Demo Script](./DEMO_SCRIPT.md) - Step-by-step demonstration guide
+- [Changelog](./CHANGELOG.md) - Version history and improvements
+
+---
 
 ## References
 
@@ -346,118 +540,4 @@ class Order {
 
 ---
 
-## Next Evolution Steps
-
-1. **Performance Optimization**
-   - Add caching layer (Redis)
-   - Implement event sourcing (Event Sourcing)
-   - CQRS read/write separation
-
-2. **Observability**
-   - Micrometer + Prometheus metrics
-   - Distributed tracing (Zipkin/Jaeger)
-   - Structured logging (ELK Stack)
-
-3. **Security**
-   - JWT authentication
-   - API rate limiting
-   - Request validation middleware
-
-4. **Resilience**
-   - Circuit Breaker (Resilience4j)
-   - Retry strategies
-   - Graceful degradation
-
----
-
-## Refactoring Improvement History (2025-10-17)
-
-### Phase 1: Domain Layer Strengthening
-
-| 改进项 | 说明 | 状态 |
-|-------|------|------|
-| **Money Normalization** | All Money operations unified to 2 decimal precision (HALF_UP rounding) | ✅ Completed |
-| **State Machine Resultization** | Order.transitionTo() returns Result<Order> instead of throwing exceptions | ✅ Completed |
-| **Event Management Optimization** | Added pullDomainEvents() method to prevent duplicate event publishing | ✅ Completed |
-| **Error Type Expansion** | Added InvalidState and DomainViolation error types | ✅ Completed |
-
-### Phase 2: Application Layer Optimization
-
-| Improvement | Description | Status |
-|-------|------|------|
-| **Unified Error Handling** | OrderPlacementHandler uses Result types entirely, eliminating exception propagation | ✅ Completed |
-| **Idempotency Support** | PlaceOrderCommand adds requestId field | ✅ Completed |
-| **Event Cleanup Mechanism** | Use pullDomainEvents() to ensure events are published only once | ✅ Completed |
-
-### Phase 3: Port Layer Refinement
-
-| Improvement | Description | Status |
-|-------|------|------|
-| **Unified Error Channel** | StockAvailabilityChecker uses Result types entirely | ✅ Completed |
-| **CQRS Read/Write Separation** | Added OrderQueryRepository interface | ✅ Completed |
-| **Batch Event Publishing** | DomainEventPublisher supports publishAll() | ✅ Completed |
-
-### Phase 4: Adapter Layer Enhancement
-
-| Improvement | Description | Status |
-|-------|------|------|
-| **DTO Validation** | Using Bean Validation annotations (@NotBlank, @Positive) | ✅ Completed |
-| **Unified Error Mapping** | Controller centrally handles all OrderError types | ✅ Completed |
-| **Structured Logging** | All adapters record orderId/requestId | ✅ Completed |
-| **Environment Configuration Separation** | Support for dev/test/prod environment configuration files | ✅ Completed |
-
-### Phase 5: Test Coverage
-
-| Test Type | File | Status |
-|---------|------|------|
-| **State Machine Testing** | OrderStateMachineTest.kt | ✅ Completed |
-| **Negative Path Testing** | OrderPlacementHandlerErrorPathTest.kt | ✅ Completed |
-| **Event Validation Testing** | OrderEventPublishTest.kt | ✅ Completed |
-| **HTTP Integration Testing** | OrderControllerValidationTest.kt | ✅ Completed |
-
-### Phase 6: Engineering Quality
-
-| Tool/Configuration | Description | Status |
-|----------|------|------|
-| **Detekt** | Kotlin static code analysis | ✅ Completed |
-| **Ktlint** | Kotlin code formatting check | ✅ Completed |
-| **GitHub Actions CI** | Automated building, testing, and quality checking | ✅ Completed |
-| **Error Mapping Documentation** | Detailed ErrorMapping.md documentation | ✅ Completed |
-
-## Refactoring Results Comparison
-
-### Code Quality Metrics
-
-| Metric | Before Refactoring | After Refactoring | Improvement |
-|-----|--------|--------|------|
-| **Error Handling Consistency** | Mixed use of exceptions and Result | 100% Result types | ⬆️ 100% |
-| **Test Coverage** | Basic testing | Includes negative paths and integration tests | ⬆️ 50%+ |
-| **Code Style Consistency** | No enforced standards | Ktlint + Detekt automatic checking | ⬆️ 100% |
-| **Environment Configuration** | Single configuration | dev/test/prod separation | ⬆️ Production Ready |
-| **Log Traceability** | Basic logging | Structured + requestId | ⬆️ 70% |
-
-### Architecture Maturity Improvement
-
-```
-Before: ⭐⭐⭐ (Usable)
-After: ⭐⭐⭐⭐⭐ (Production Ready)
-```
-
-**Improvement Dimensions**:
-- ✅ Semantic error handling
-- ✅ State machine completeness
-- ✅ Comprehensive test coverage
-- ✅ CI/CD automation
-- ✅ Code quality assurance
-- ✅ Multi-environment support
-
-## Related Documentation
-
-- [Complete Documentation Index](./DOCUMENTATION.md) - Navigation and reading guide for all documents
-- [Error Handling Mapping](./ErrorMapping.md) - HTTP status code to error type mapping
-- [Original Architecture Design](./ARCHITECTURE_v1_legacy.md) - Initial architecture design (historical reference)
-
----
-
-**This architecture is ready for production use!**
-
+**This is a learning-focused demo project showcasing production-ready architecture patterns.**

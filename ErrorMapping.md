@@ -50,7 +50,7 @@ All error responses use a unified `ApiResponse<T>` wrapper:
 - Item quantity is negative or zero (though intercepted by DTO validation)
 - Other business rule validation failures
 
-**示例请求**：
+**Example Request**:
 ```json
 {
   "items": [],
@@ -272,17 +272,17 @@ async function placeOrder(request: PlaceOrderRequest): Promise<OrderId> {
       switch (error.error.code) {
         case 'INSUFFICIENT_STOCK':
           // Show out-of-stock notification
-          showAlert('部分商品库存不足', error.error.details);
+          showAlert('Items out of stock', error.error.details);
           break;
         case 'INVALID_ORDER':
         case 'INVALID_STATE':
         case 'DOMAIN_VIOLATION':
           // Show validation error
-          showAlert('请求参数错误', error.error.message);
+          showAlert('Invalid request', error.error.message);
           break;
         case 'ORDER_PLACEMENT_FAILED':
           // System error, retriable
-          if (confirm('系统繁忙，是否重试？')) {
+          if (confirm('System busy. Retry?')) {
             return placeOrder(request); // Retry
           }
           break;
@@ -305,7 +305,7 @@ Adding New Error Types:
 3. Update this document
 4. Notify frontend team to update error handling logic
 
-**示例**：
+**Example**:
 ```kotlin
 // 1. Define new error type
 class PaymentFailed(
