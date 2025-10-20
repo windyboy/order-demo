@@ -42,6 +42,16 @@ class OrderCLI(
 ) {
     private val log = LoggerFactory.getLogger(OrderCLI::class.java)
 
+    companion object {
+        // Demo sample data constants
+        private const val DEMO_APPLE_PRICE = 5.99
+        private const val DEMO_APPLE_QUANTITY = 3
+        private const val DEMO_BANANA_PRICE = 2.49
+        private const val DEMO_BANANA_QUANTITY = 5
+        private const val DEMO_ORANGE_PRICE = 4.50
+        private const val DEMO_ORANGE_QUANTITY = 2
+    }
+
     /**
      * Runs an interactive CLI demo of the order service.
      */
@@ -58,9 +68,9 @@ class OrderCLI(
         // Create order items (same domain objects as HTTP adapter!)
         val items =
             listOf(
-                OrderItem.of("APPLE-001", Money.of(5.99), 3),
-                OrderItem.of("BANANA-002", Money.of(2.49), 5),
-                OrderItem.of("ORANGE-003", Money.of(4.50), 2),
+                OrderItem.of("APPLE-001", Money.of(DEMO_APPLE_PRICE), DEMO_APPLE_QUANTITY),
+                OrderItem.of("BANANA-002", Money.of(DEMO_BANANA_PRICE), DEMO_BANANA_QUANTITY),
+                OrderItem.of("ORANGE-003", Money.of(DEMO_ORANGE_PRICE), DEMO_ORANGE_QUANTITY),
             )
 
         // Display order details

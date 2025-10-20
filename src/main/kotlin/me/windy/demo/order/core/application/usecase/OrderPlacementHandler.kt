@@ -36,7 +36,6 @@ class OrderPlacementHandler(
     private val stockChecker: StockAvailabilityChecker,
     private val eventPublisher: DomainEventPublisher,
 ) : PlaceOrderUseCase {
-
     override fun execute(command: PlaceOrderCommand): Result<OrderId> {
         return validate(command)
             .flatMap(::reserveStock)
@@ -91,12 +90,13 @@ class OrderPlacementHandler(
     }
 
     private fun persistAndPublish(context: OrderPlacementContext): Result<OrderPlacementResult> {
-        val order = context.order
-            ?: return Result.failure(
-                OrderError.DomainViolation(
-                    message = "Order aggregate was not created before persistence",
-                ),
-            )
+        val order =
+            context.order
+                ?: return Result.failure(
+                    OrderError.DomainViolation(
+                        message = "Order aggregate was not created before persistence",
+                    ),
+                )
 
         return repository.save(order).fold(
             onSuccess = { orderId ->
